@@ -18,5 +18,13 @@ namespace WorldPainter.Runtime.ScriptableObjects
         [Header("Object Spawning")]
         [SerializeField] private GameObject prefabLink;
         [SerializeField] private Vector2Int objectSize = Vector2Int.one;
+        
+        public Sprite Sprite => sprite;
+        public TileBase RuleTile => ruleTile;
+        public bool IsSolid => isSolid;
+        public int Hardness => hardness;
+        public bool IsDynamic => isDynamic;
+        public GameObject PrefabLink => prefabLink;
+        public Vector2Int ObjectSize => objectSize;
     }
 }

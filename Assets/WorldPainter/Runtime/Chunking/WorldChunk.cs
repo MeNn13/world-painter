@@ -14,7 +14,10 @@ namespace WorldPainter.Runtime.Chunking
         [SerializeField] private Tilemap collisionTilemap;
         [SerializeField] private CompositeCollider2D chunkCollider;
 
-        public bool IsDirty { get; private set; } = false;
+        public bool IsDirty { get; set; }
+        public Tilemap VisualTilemap => visualTilemap;
+        public Tilemap CollisionTilemap => collisionTilemap;
+        public CompositeCollider2D ChunkCollider => chunkCollider;
 
         public void Initialize(Tilemap visual, Tilemap collision, CompositeCollider2D collider)
         {
@@ -23,7 +26,7 @@ namespace WorldPainter.Runtime.Chunking
             chunkCollider = collider;
         }
 
-        public TileCell GetTile(int x, int y)
+        public TileCell GetCell(int x, int y)
         {
             if (CheckChunkBounds(x, y))
             {
@@ -34,7 +37,7 @@ namespace WorldPainter.Runtime.Chunking
             return data[x, y];
         }
 
-        public void SetTile(int x, int y, TileCell cell)
+        public void SetCell(int x, int y, TileCell cell)
         {
             if (CheckChunkBounds(x, y))
             {
