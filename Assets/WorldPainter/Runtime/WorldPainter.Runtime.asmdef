@@ -1,9 +1,7 @@
 {
-    "name": "Editor",
+    "name": "WorldPainter.Runtime",
     "rootNamespace": "",
-    "references": [
-        "GUID:a4675cf23165a064faaa92216d9f2732"
-    ],
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
