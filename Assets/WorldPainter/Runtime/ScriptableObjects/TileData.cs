@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace WorldPainter.Runtime.ScriptableObjects
 {
@@ -6,8 +7,8 @@ namespace WorldPainter.Runtime.ScriptableObjects
     public class TileData : ScriptableObject
     {
         [SerializeField] private string displayName;
-            
-        public string TileId { get; }
+
+        public string TileId { get; } = Guid.NewGuid().ToString();
         public string DisplayName => displayName;
 
         public void OnValidate()
