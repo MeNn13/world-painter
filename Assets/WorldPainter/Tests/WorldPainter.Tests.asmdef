@@ -1,12 +1,13 @@
 {
-    "name": "Tests",
+    "name": "WorldPainter.Tests",
     "rootNamespace": "",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Editor",
         "Runtime",
-        "Unity.2D.Tilemap.Extras"
+        "Unity.2D.Tilemap.Extras",
+        "WorldPainter.Runtime"
     ],
     "includePlatforms": [
         "Editor"
