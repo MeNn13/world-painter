@@ -36,7 +36,7 @@ namespace WorldPainter.Runtime.Providers
         public void SetTileAt(Vector2Int worldPos, TileData tile)
         {
             Undo.RegisterCompleteObjectUndo(this, "Paint Tile");
-            
+
             Vector2Int chunkCoord = WorldGrid.WorldToChunkCoord(worldPos);
             Vector2Int localPos = WorldGrid.WorldToLocalInChunk(worldPos);
 
@@ -48,14 +48,44 @@ namespace WorldPainter.Runtime.Providers
 
             chunkData.SetTile(localPos, tile);
 
-            //Если чанка нет - создаем его
-            if (!_activeChunks.TryGetValue(chunkCoord, out Chunk chunk) || chunk is null)
+            // ВАЖНОЕ ИСПРАВЛЕНИЕ: Проверяем, не уничтожен ли чанк
+            bool needNewChunk = true;
+
+            if (_activeChunks.TryGetValue(chunkCoord, out Chunk chunk))
             {
-                // Создаем новый GameObject для чанка
+                // ПРОВЕРЯЕМ, ЖИВ ЛИ ЧАНК
+                if (chunk != null)
+                {
+                    try
+                    {
+                        // Если можем получить доступ - чанк жив
+                        var transform = chunk.transform;
+                        if (transform != null)
+                        {
+                            // Чанк жив - обновляем тайл
+                            chunk.SetTile(localPos, tile);
+                            needNewChunk = false;
+                        }
+                    }
+                    catch
+                    {
+                        // Чанк уничтожен - удаляем из словаря
+                        _activeChunks.Remove(chunkCoord);
+                    }
+                }
+                else
+                {
+                    // Чанк null - удаляем из словаря
+                    _activeChunks.Remove(chunkCoord);
+                }
+            }
+
+            // ЕСЛИ НУЖЕН НОВЫЙ ЧАНК
+            if (needNewChunk)
+            {
                 GameObject chunkGo = new GameObject($"Chunk_{chunkCoord.x}_{chunkCoord.y}");
                 chunk = chunkGo.AddComponent<Chunk>();
 
-                // Нужно назначить TilePool - найдем его в сцене
                 TilePool tilePool = FindObjectOfType<TilePool>();
                 if (tilePool != null)
                 {
@@ -68,14 +98,7 @@ namespace WorldPainter.Runtime.Providers
                 }
 
                 _activeChunks[chunkCoord] = chunk;
-
-                // Инициализируем чанк с данными
                 chunk.Initialize(chunkCoord, chunkData);
-            }
-            else
-            {
-                // Если чанк уже есть - просто обновляем тайл
-                chunk.SetTile(localPos, tile);
             }
         }
 
