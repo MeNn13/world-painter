@@ -11,5 +11,7 @@ namespace WorldPainter.Runtime.Providers
         
         ChunkData GetChunkData(Vector2Int chunkCoord);
         void SetChunkData(Vector2Int chunkCoord, ChunkData chunk);
+        
+        TileData SetTileAtWithUndo(Vector2Int worldPos, TileData tile);
     }
 }

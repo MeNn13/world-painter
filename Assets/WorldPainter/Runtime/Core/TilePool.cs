@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using WorldPainter.Runtime.ScriptableObjects;
 
@@ -8,19 +9,19 @@ namespace WorldPainter.Runtime.Core
     {
         [SerializeField] private Tile tilePrefab;
         [SerializeField] private int initialPoolSize = 50;
-        
-        private readonly Queue<Tile> _pool = new();
+
+        private Queue<Tile> _pool = new();
         private Transform _poolContainer;
-        
+
         private void Awake()
         {
             _poolContainer = new GameObject("TilePool Container").transform;
             _poolContainer.SetParent(transform);
             _poolContainer.gameObject.SetActive(false);
-            
+
             WarmPool();
         }
-        
+
         private void WarmPool()
         {
             for (int i = 0; i < initialPoolSize; i++)
@@ -30,32 +31,51 @@ namespace WorldPainter.Runtime.Core
                 _pool.Enqueue(tile);
             }
         }
-        
+
         private Tile CreateNewTile()
         {
             Tile tile = Instantiate(tilePrefab);
             tile.gameObject.SetActive(false);
             return tile;
         }
-        
+
         public Tile GetTile(TileData data, Vector2Int gridPosition)
         {
             Tile tile;
-            
-            if (_pool.Count > 0)
+
+            // ПРОБУЕМ БРАТЬ ИЗ ПУЛА, ПОКА НЕ НАЙДЕМ ЖИВОЙ ТАЙЛ
+            while (_pool.Count > 0)
             {
                 tile = _pool.Dequeue();
-                tile.gameObject.SetActive(true);
+
+                // БЕЗОПАСНАЯ ПРОВЕРКА
+                if (tile != null)
+                {
+                    try
+                    {
+                        // Если можем получить gameObject - тайл жив
+                        var go = tile.gameObject;
+                        if (go != null)
+                        {
+                            go.SetActive(true);
+                            tile.Initialize(data, gridPosition);
+                            return tile;
+                        }
+                    }
+                    catch
+                    {
+                        // Тайл уничтожен - продолжаем искать
+                        continue;
+                    }
+                }
             }
-            else
-            {
-                tile = CreateNewTile();
-            }
-            
+
+            // Если в пуле нет живых тайлов - создаем новый
+            tile = CreateNewTile();
             tile.Initialize(data, gridPosition);
             return tile;
         }
-        
+
         public void ReturnTile(Tile tile)
         {
             tile.Recycle();

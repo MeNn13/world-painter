@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using WorldPainter.Runtime.Core;
 using WorldPainter.Runtime.Data;
@@ -17,10 +18,8 @@ namespace WorldPainter.Runtime.Providers
         private void Start()
         {
             TilePool tilePool = FindObjectOfType<TilePool>();
-            if (tilePool != null)
-            {
+            if (tilePool is not null)
                 SetTilePool(tilePool);
-            }
         }
 
         public TileData GetTileAt(Vector2Int worldPos)
@@ -36,6 +35,8 @@ namespace WorldPainter.Runtime.Providers
         [Obsolete("Obsolete")]
         public void SetTileAt(Vector2Int worldPos, TileData tile)
         {
+            Undo.RegisterCompleteObjectUndo(this, "Paint Tile");
+            
             Vector2Int chunkCoord = WorldGrid.WorldToChunkCoord(worldPos);
             Vector2Int localPos = WorldGrid.WorldToLocalInChunk(worldPos);
 
@@ -47,8 +48,8 @@ namespace WorldPainter.Runtime.Providers
 
             chunkData.SetTile(localPos, tile);
 
-            // ВАЖНОЕ ИСПРАВЛЕНИЕ: Если чанка нет - создаем его
-            if (!_activeChunks.TryGetValue(chunkCoord, out Chunk chunk))
+            //Если чанка нет - создаем его
+            if (!_activeChunks.TryGetValue(chunkCoord, out Chunk chunk) || chunk is null)
             {
                 // Создаем новый GameObject для чанка
                 GameObject chunkGo = new GameObject($"Chunk_{chunkCoord.x}_{chunkCoord.y}");
@@ -90,7 +91,7 @@ namespace WorldPainter.Runtime.Providers
 
         public void SetChunkData(Vector2Int chunkCoord, ChunkData chunk) =>
             _chunks[chunkCoord] = chunk;
-        
+
         public void SetTilePool(TilePool pool)
         {
             // Обновляем TilePool для всех активных чанков
@@ -98,9 +99,49 @@ namespace WorldPainter.Runtime.Providers
                 activeChunk.tilePool = pool;
         }
 
-        public void RegisterChunk(Vector2Int chunkCoord, Chunk chunk)
+        public TileData SetTileAtWithUndo(Vector2Int worldPos, TileData tile)
         {
-            _activeChunks[chunkCoord] = chunk;
+            Vector2Int chunkCoord = WorldGrid.WorldToChunkCoord(worldPos);
+            Vector2Int localPos = WorldGrid.WorldToLocalInChunk(worldPos);
+
+            if (!_chunks.TryGetValue(chunkCoord, out ChunkData chunkData))
+            {
+                chunkData = new ChunkData(chunkCoord);
+                _chunks[chunkCoord] = chunkData;
+            }
+
+            // Сохраняем старый тайл для Undo
+            TileData oldTile = chunkData.GetTile(localPos);
+
+            // Устанавливаем новый тайл
+            chunkData.SetTile(localPos, tile);
+
+            // Обновляем визуал
+            if (!_activeChunks.TryGetValue(chunkCoord, out Chunk chunk))
+            {
+                GameObject chunkGO = new GameObject($"Chunk_{chunkCoord.x}_{chunkCoord.y}");
+                chunk = chunkGO.AddComponent<Chunk>();
+
+                TilePool tilePool = FindObjectOfType<TilePool>();
+                if (tilePool != null)
+                {
+                    chunk.tilePool = tilePool;
+                }
+                else
+                {
+                    Debug.LogError("TilePool not found in scene!");
+                    return oldTile;
+                }
+
+                _activeChunks[chunkCoord] = chunk;
+                chunk.Initialize(chunkCoord, chunkData);
+            }
+            else
+            {
+                chunk.SetTile(localPos, tile);
+            }
+
+            return oldTile; // Возвращаем старый тайл для Undo
         }
     }
 }

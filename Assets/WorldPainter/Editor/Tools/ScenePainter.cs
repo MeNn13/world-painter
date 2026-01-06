@@ -102,13 +102,18 @@ namespace WorldPainter.Editor.Tools
                         case PaintMode.Paint:
                             if (_selectedTile != null)
                             {
+                                // Выполняем действие
                                 dataProvider.SetTileAt(gridPos, _selectedTile);
-                                Debug.Log($"Painted {_selectedTile.DisplayName} at {gridPos} (world: {worldPoint})");
+
+                                Debug.Log($"Painted {_selectedTile.DisplayName} at {gridPos}");
                             }
                             break;
 
                         case PaintMode.Erase:
+
+                            // Выполняем действие
                             dataProvider.SetTileAt(gridPos, null);
+
                             Debug.Log($"Erased tile at {gridPos}");
                             break;
                     }
