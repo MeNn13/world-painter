@@ -41,8 +41,11 @@ namespace WorldPainter.Runtime.Core
                     if (tileData is not null)
                     {
                         Tile tile = tilePool.GetTile(tileData, LocalToWorldPosition(localPos));
-                        tile.transform.SetParent(transform);
-                        _tiles[x, y] = tile;
+                        if (tile is not null)
+                        {
+                            tile.transform.SetParent(transform);
+                            _tiles[x, y] = tile;
+                        }
                     }
                 }
         }
@@ -73,6 +76,16 @@ namespace WorldPainter.Runtime.Core
                     _tiles[localPos.x, localPos.y] = tile;
                 }
             }
+        }
+
+        public bool IsEmpty()
+        {
+            for (int x = 0; x < ChunkData.SIZE; x++)
+                for (int y = 0; y < ChunkData.SIZE; y++)
+                    if (_tiles[x, y] is not null)
+                        return false;
+
+            return true;
         }
 
         public void Clear()

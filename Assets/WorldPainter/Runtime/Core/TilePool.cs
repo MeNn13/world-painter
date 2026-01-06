@@ -32,10 +32,10 @@ namespace WorldPainter.Runtime.Core
             }
         }
 
-        private Tile CreateNewTile()
+        private Tile CreateNewTile(bool setActive = true)
         {
             Tile tile = Instantiate(tilePrefab);
-            tile.gameObject.SetActive(false);
+            tile.gameObject.SetActive(setActive);
             return tile;
         }
 
@@ -78,6 +78,17 @@ namespace WorldPainter.Runtime.Core
 
         public void ReturnTile(Tile tile)
         {
+            if (tile == null) return;
+
+                #if UNITY_EDITOR
+            // В РЕДАКТОРЕ УНИЧТОЖАЕМ ТАЙЛЫ
+            if (!Application.isPlaying)
+            {
+                DestroyImmediate(tile.gameObject);
+                return;
+            }
+    #endif
+
             tile.Recycle();
             tile.transform.SetParent(_poolContainer);
             _pool.Enqueue(tile);

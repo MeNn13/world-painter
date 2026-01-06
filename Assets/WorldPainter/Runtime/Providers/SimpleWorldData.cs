@@ -42,64 +42,70 @@ namespace WorldPainter.Runtime.Providers
 
             if (!_chunks.TryGetValue(chunkCoord, out ChunkData chunkData))
             {
-                chunkData = new ChunkData(chunkCoord);
-                _chunks[chunkCoord] = chunkData;
-            }
-
-            chunkData.SetTile(localPos, tile);
-
-            // ВАЖНОЕ ИСПРАВЛЕНИЕ: Проверяем, не уничтожен ли чанк
-            bool needNewChunk = true;
-
-            if (_activeChunks.TryGetValue(chunkCoord, out Chunk chunk))
-            {
-                // ПРОВЕРЯЕМ, ЖИВ ЛИ ЧАНК
-                if (chunk != null)
+                // Если рисуем новый тайл в новом месте - создаем чанк
+                if (tile != null)
                 {
-                    try
-                    {
-                        // Если можем получить доступ - чанк жив
-                        var transform = chunk.transform;
-                        if (transform != null)
-                        {
-                            // Чанк жив - обновляем тайл
-                            chunk.SetTile(localPos, tile);
-                            needNewChunk = false;
-                        }
-                    }
-                    catch
-                    {
-                        // Чанк уничтожен - удаляем из словаря
-                        _activeChunks.Remove(chunkCoord);
-                    }
+                    chunkData = new ChunkData(chunkCoord);
+                    _chunks[chunkCoord] = chunkData;
                 }
                 else
                 {
-                    // Чанк null - удаляем из словаря
+                    // Если стираем там, где ничего нет - просто выходим
+                    return;
+                }
+            }
+
+            // Устанавливаем тайл в данные
+            chunkData.SetTile(localPos, tile);
+
+            // ОБНОВЛЯЕМ ТОЛЬКО ОДИН ТАЙЛ (оптимально)
+            UpdateSingleTileVisual(chunkCoord, localPos, tile);
+        }
+
+        private void UpdateSingleTileVisual(Vector2Int chunkCoord, Vector2Int localPos, TileData tile)
+        {
+            // Если чанк существует
+            if (_activeChunks.TryGetValue(chunkCoord, out Chunk chunk) && chunk != null)
+            {
+                // Обновляем тайл
+                chunk.SetTile(localPos, tile);
+        
+                // ПРОВЕРЯЕМ, СТАЛ ЛИ ЧАНК ПУСТЫМ ПОСЛЕ СТИРАНИЯ
+                if (tile == null && chunk.IsEmpty())
+                {
+                    // Удаляем пустой чанк
+                    DestroyImmediate(chunk.gameObject);
                     _activeChunks.Remove(chunkCoord);
                 }
             }
-
-            // ЕСЛИ НУЖЕН НОВЫЙ ЧАНК
-            if (needNewChunk)
+            else if (tile != null) // Если чанка нет, но мы рисуем тайл
             {
-                GameObject chunkGo = new GameObject($"Chunk_{chunkCoord.x}_{chunkCoord.y}");
-                chunk = chunkGo.AddComponent<Chunk>();
-
-                TilePool tilePool = FindObjectOfType<TilePool>();
-                if (tilePool != null)
-                {
-                    chunk.tilePool = tilePool;
-                }
-                else
-                {
-                    Debug.LogError("TilePool not found in scene!");
-                    return;
-                }
-
-                _activeChunks[chunkCoord] = chunk;
-                chunk.Initialize(chunkCoord, chunkData);
+                // Создаем новый чанк
+                CreateNewChunk(chunkCoord);
             }
+        }
+
+        private void CreateNewChunk(Vector2Int chunkCoord)
+        {
+            if (!_chunks.TryGetValue(chunkCoord, out ChunkData chunkData))
+                return;
+
+            GameObject chunkGo = new GameObject($"Chunk_{chunkCoord.x}_{chunkCoord.y}");
+            Chunk newChunk = chunkGo.AddComponent<Chunk>();
+
+            TilePool tilePool = FindObjectOfType<TilePool>();
+            if (tilePool != null)
+            {
+                newChunk.tilePool = tilePool;
+            }
+            else
+            {
+                Debug.LogError("TilePool not found in scene!");
+                return;
+            }
+
+            _activeChunks[chunkCoord] = newChunk;
+            newChunk.Initialize(chunkCoord, chunkData);
         }
 
         public ChunkData GetChunkData(Vector2Int chunkCoord)
