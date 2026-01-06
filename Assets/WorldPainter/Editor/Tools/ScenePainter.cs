@@ -14,7 +14,7 @@ namespace WorldPainter.Editor.Tools
         private static bool _isPainting;
         private static PaintMode _paintMode = PaintMode.Paint;
         private static TileData _selectedTile;
-        
+
         static ScenePainter()
         {
             SceneView.duringSceneGui += OnSceneGUI;
@@ -37,7 +37,7 @@ namespace WorldPainter.Editor.Tools
             GUILayout.BeginVertical("Box");
 
             GUILayout.Label("World Painter", EditorStyles.boldLabel);
-            
+
             if (GUILayout.Button("Tile Palette"))
                 TilePaletteWindow.ShowWindow();
 
@@ -72,43 +72,49 @@ namespace WorldPainter.Editor.Tools
             if (!e.control) return;
 
             // Обрабатываем клик мыши
-            if (e.type == EventType.MouseDown || e.type == EventType.MouseDrag)
+            if (e.type is EventType.MouseDown or EventType.MouseDrag)
             {
-                // Получаем позицию клика в мире
-                Vector2 mousePosition = e.mousePosition;
-                mousePosition.y = sceneView.camera.pixelHeight - mousePosition.y;
-                Ray ray = sceneView.camera.ScreenPointToRay(mousePosition);
+                // Используем HandleUtility для точного преобразования координат
+                Ray ray = HandleUtility.GUIPointToWorldRay(e.mousePosition);
 
-                // Конвертируем в координаты сетки (2D, Z=0)
-                Vector3 worldPos = ray.origin - ray.direction * (ray.origin.z / ray.direction.z);
-                Vector2Int gridPos = new Vector2Int(Mathf.FloorToInt(worldPos.x), Mathf.FloorToInt(worldPos.y));
+                // Плоскость Z=0
+                Plane groundPlane = new Plane(Vector3.forward, Vector3.zero);
 
-                // Находим IWorldDataProvider в сцене
-                IWorldDataProvider dataProvider = FindWorldDataProvider();
-                if (dataProvider == null)
+                if (groundPlane.Raycast(ray, out float distance))
                 {
-                    Debug.LogWarning("No IWorldDataProvider found in scene!");
-                    return;
+                    Vector3 worldPoint = ray.GetPoint(distance);
+                    Vector2Int gridPos = new Vector2Int(
+                        Mathf.FloorToInt(worldPoint.x + 0.5f),
+                        Mathf.FloorToInt(worldPoint.y + 0.5f)
+                        );
+
+                    // Находим IWorldDataProvider в сцене
+                    IWorldDataProvider dataProvider = FindWorldDataProvider();
+                    if (dataProvider == null)
+                    {
+                        Debug.LogWarning("No IWorldDataProvider found in scene!");
+                        return;
+                    }
+
+                    // Выполняем действие в зависимости от режима
+                    switch (_paintMode)
+                    {
+                        case PaintMode.Paint:
+                            if (_selectedTile != null)
+                            {
+                                dataProvider.SetTileAt(gridPos, _selectedTile);
+                                Debug.Log($"Painted {_selectedTile.DisplayName} at {gridPos} (world: {worldPoint})");
+                            }
+                            break;
+
+                        case PaintMode.Erase:
+                            dataProvider.SetTileAt(gridPos, null);
+                            Debug.Log($"Erased tile at {gridPos}");
+                            break;
+                    }
+
+                    e.Use();
                 }
-
-                // Выполняем действие в зависимости от режима
-                switch (_paintMode)
-                {
-                    case PaintMode.Paint:
-                        if (_selectedTile != null)
-                        {
-                            dataProvider.SetTileAt(gridPos, _selectedTile);
-                            Debug.Log($"Painted {_selectedTile.DisplayName} at {gridPos}");
-                        }
-                        break;
-
-                    case PaintMode.Erase:
-                        dataProvider.SetTileAt(gridPos, null);
-                        Debug.Log($"Erased tile at {gridPos}");
-                        break;
-                }
-
-                e.Use();
             }
         }
 
