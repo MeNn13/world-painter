@@ -2,7 +2,8 @@
     "name": "WorldPainter.Editor",
     "rootNamespace": "",
     "references": [
-        "GUID:a4675cf23165a064faaa92216d9f2732"
+        "GUID:a4675cf23165a064faaa92216d9f2732",
+        "GUID:343deaaf83e0cee4ca978e7df0b80d21"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
