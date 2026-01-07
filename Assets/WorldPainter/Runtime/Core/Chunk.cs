@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using WorldPainter.Runtime.Data;
+using WorldPainter.Runtime.Providers;
 using WorldPainter.Runtime.ScriptableObjects;
 
 namespace WorldPainter.Runtime.Core
@@ -32,6 +33,8 @@ namespace WorldPainter.Runtime.Core
 
         private void RenderChunk(ChunkData data)
         {
+            SimpleWorldData worldProvider = FindObjectOfType<SimpleWorldData>();
+
             for (int x = 0; x < ChunkData.SIZE; x++)
                 for (int y = 0; y < ChunkData.SIZE; y++)
                 {
@@ -41,11 +44,9 @@ namespace WorldPainter.Runtime.Core
                     if (tileData is not null)
                     {
                         Tile tile = tilePool.GetTile(tileData, LocalToWorldPosition(localPos));
-                        if (tile is not null)
-                        {
-                            tile.transform.SetParent(transform);
-                            _tiles[x, y] = tile;
-                        }
+                        tile.Initialize(tileData, LocalToWorldPosition(localPos), worldProvider);
+                        tile.transform.SetParent(transform);
+                        _tiles[x, y] = tile;
                     }
                 }
         }
@@ -71,7 +72,10 @@ namespace WorldPainter.Runtime.Core
             {
                 if (tileData is not null)
                 {
+                    SimpleWorldData worldProvider = FindObjectOfType<SimpleWorldData>();
                     Tile tile = tilePool?.GetTile(tileData, LocalToWorldPosition(localPos));
+                    // ПЕРЕДАЕМ worldProvider
+                    tile?.Initialize(tileData, LocalToWorldPosition(localPos), worldProvider);
                     tile?.transform.SetParent(transform);
                     _tiles[localPos.x, localPos.y] = tile;
                 }
@@ -86,6 +90,15 @@ namespace WorldPainter.Runtime.Core
                         return false;
 
             return true;
+        }
+
+        public Tile GetTileAtLocalPos(Vector2Int localPos)
+        {
+            if (localPos.x >= 0 && localPos.x < ChunkData.SIZE && localPos.y >= 0 && localPos.y < ChunkData.SIZE)
+            {
+                return _tiles[localPos.x, localPos.y];
+            }
+            return null;
         }
 
         public void Clear()
