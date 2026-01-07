@@ -14,6 +14,10 @@ namespace WorldPainter.Runtime.Providers
         private readonly Dictionary<Vector2Int, ChunkData> _chunks = new();
         private readonly Dictionary<Vector2Int, Chunk> _activeChunks = new();
 
+        // НОВЫЕ ПОЛЯ для мультитайлов
+        private Dictionary<Vector2Int, MultiTile> _multiTiles = new(); // Позиция → MultiTile
+        private Dictionary<Vector2Int, Vector2Int> _positionToMultiTileRoot = new(); // Быстрый поиск корня
+
         [Obsolete("Obsolete")]
         private void Start()
         {
@@ -24,6 +28,13 @@ namespace WorldPainter.Runtime.Providers
 
         public TileData GetTileAt(Vector2Int worldPos)
         {
+            // Сначала проверяем мультитайлы
+            if (_multiTiles.TryGetValue(worldPos, out MultiTile multiTile))
+            {
+                return multiTile.Data;
+            }
+
+            // Потом обычные тайлы
             Vector2Int chunkCoord = WorldGrid.WorldToChunkCoord(worldPos);
             Vector2Int localPos = WorldGrid.WorldToLocalInChunk(worldPos);
 
@@ -35,6 +46,11 @@ namespace WorldPainter.Runtime.Providers
         [Obsolete("Obsolete")]
         public void SetTileAt(Vector2Int worldPos, TileData tile)
         {
+            if (_multiTiles.ContainsKey(worldPos))
+            {
+                RemoveMultiTileAt(worldPos);
+            }
+
             Undo.RegisterCompleteObjectUndo(this, "Paint Tile");
 
             Vector2Int chunkCoord = WorldGrid.WorldToChunkCoord(worldPos);
@@ -60,7 +76,7 @@ namespace WorldPainter.Runtime.Providers
 
             // ОБНОВЛЯЕМ ТОЛЬКО ОДИН ТАЙЛ (оптимально)
             UpdateSingleTileVisual(chunkCoord, localPos, tile);
-            
+
             if (tile != null || GetTileAt(worldPos) != null)
             {
                 UpdateNeighborTiles(worldPos);
@@ -74,7 +90,7 @@ namespace WorldPainter.Runtime.Providers
             {
                 // Обновляем тайл
                 chunk.SetTile(localPos, tile);
-        
+
                 // ПРОВЕРЯЕМ, СТАЛ ЛИ ЧАНК ПУСТЫМ ПОСЛЕ СТИРАНИЯ
                 if (tile == null && chunk.IsEmpty())
                 {
@@ -89,25 +105,26 @@ namespace WorldPainter.Runtime.Providers
                 CreateNewChunk(chunkCoord);
             }
         }
-        
+
         private void UpdateNeighborTiles(Vector2Int worldPos)
         {
             // 8 соседних позиций
-            Vector2Int[] neighborOffsets = {
+            Vector2Int[] neighborOffsets =
+            {
                 new(0, 1), new(1, 1), new(1, 0), new(1, -1),
                 new(0, -1), new(-1, -1), new(-1, 0), new(-1, 1)
             };
-    
+
             foreach (var offset in neighborOffsets)
             {
                 Vector2Int neighborPos = worldPos + offset;
                 UpdateTileVisual(neighborPos);
             }
-    
+
             // И сам тайл
             UpdateTileVisual(worldPos);
         }
-        
+
         private void UpdateTileVisual(Vector2Int worldPos)
         {
             Vector2Int chunkCoord = WorldGrid.WorldToChunkCoord(worldPos);
@@ -212,5 +229,192 @@ namespace WorldPainter.Runtime.Providers
 
             return oldTile; // Возвращаем старый тайл для Undo
         }
+
+        /// <summary>
+        /// Проверяет можно ли разместить мультитайл
+        /// </summary>
+        public bool CanPlaceMultiTile(MultiTileData data, Vector2Int rootPosition)
+        {
+            // 1. Проверяем что все клетки свободны
+            var occupiedPositions = data.GetAllOccupiedPositions(rootPosition);
+            foreach (var pos in occupiedPositions)
+            {
+                // Проверяем нет ли здесь обычного тайла
+                if (GetTileAt(pos) != null)
+                    return false;
+
+                // Проверяем нет ли здесь другого мультитайла
+                if (_multiTiles.ContainsKey(pos))
+                    return false;
+            }
+
+            // 2. Проверяем правила крепления
+            return CheckAttachmentRules(data, rootPosition);
+        }
+
+        /// <summary>
+        /// Размещает мультитайл
+        /// </summary>
+        public bool PlaceMultiTile(MultiTileData data, Vector2Int rootPosition)
+        {
+            if (!CanPlaceMultiTile(data, rootPosition))
+                return false;
+
+            Undo.RegisterCompleteObjectUndo(this, $"Place {data.DisplayName}");
+
+            // Получаем пул
+            TilePool tilePool = FindObjectOfType<TilePool>();
+            if (tilePool == null)
+            {
+                Debug.LogError("TilePool not found in scene!");
+                return false;
+            }
+
+            // Создаём мультитайл
+            MultiTile multiTile = tilePool.GetMultiTile(data, rootPosition);
+            if (multiTile == null)
+                return false;
+
+            // Запоминаем во всех клетках
+            var occupiedPositions = data.GetAllOccupiedPositions(rootPosition);
+            foreach (var pos in occupiedPositions)
+            {
+                _multiTiles[pos] = multiTile;
+                _positionToMultiTileRoot[pos] = rootPosition;
+
+                // В данных чанка отмечаем что здесь мультитайл
+                Vector2Int chunkCoord = WorldGrid.WorldToChunkCoord(pos);
+                Vector2Int localPos = WorldGrid.WorldToLocalInChunk(pos);
+
+                if (!_chunks.TryGetValue(chunkCoord, out ChunkData chunkData))
+                {
+                    chunkData = new ChunkData(chunkCoord);
+                    _chunks[chunkCoord] = chunkData;
+                }
+
+                // Сохраняем ссылку на MultiTileData вместо null
+                chunkData.SetTile(localPos, data);
+            }
+
+            // Родитель - этот объект или можно в отдельный контейнер
+            multiTile.transform.SetParent(transform);
+
+            Debug.Log($"Placed MultiTile {data.DisplayName} at {rootPosition}");
+            return true;
+        }
+
+        /// <summary>
+        /// Удаляет мультитайл по любой позиции внутри него
+        /// </summary>
+        public bool RemoveMultiTileAt(Vector2Int anyPosition)
+        {
+            if (!_positionToMultiTileRoot.TryGetValue(anyPosition, out Vector2Int rootPosition))
+                return false;
+
+            if (!_multiTiles.TryGetValue(anyPosition, out MultiTile multiTile))
+                return false;
+
+            Undo.RegisterCompleteObjectUndo(this, $"Remove {multiTile.Data.DisplayName}");
+
+            // Удаляем из всех словарей
+            var occupiedPositions = multiTile.GetAllOccupiedPositions();
+            foreach (var pos in occupiedPositions)
+            {
+                _multiTiles.Remove(pos);
+                _positionToMultiTileRoot.Remove(pos);
+
+                // Очищаем данные чанка
+                Vector2Int chunkCoord = WorldGrid.WorldToChunkCoord(pos);
+                Vector2Int localPos = WorldGrid.WorldToLocalInChunk(pos);
+
+                if (_chunks.TryGetValue(chunkCoord, out ChunkData chunkData))
+                {
+                    chunkData.SetTile(localPos, null);
+                }
+            }
+
+            // Возвращаем в пул
+            TilePool tilePool = FindObjectOfType<TilePool>();
+            if (tilePool != null)
+            {
+                tilePool.ReturnMultiTile(multiTile);
+            }
+            else
+            {
+                DestroyImmediate(multiTile.gameObject);
+            }
+
+            Debug.Log($"Removed MultiTile {multiTile.Data.DisplayName}");
+            return true;
+        }
+
+        /// <summary>
+        /// Получает мультитайл по позиции
+        /// </summary>
+        public MultiTile GetMultiTileAt(Vector2Int position)
+        {
+            _multiTiles.TryGetValue(position, out MultiTile multiTile);
+            return multiTile;
+        }
+
+        /// <summary>
+        /// Проверяет правила крепления для мультитайла
+        /// </summary>
+        private bool CheckAttachmentRules(MultiTileData data, Vector2Int rootPosition)
+        {
+            switch (data.attachmentType)
+            {
+                case MultiTileData.AttachmentType.None:
+                    return true; // Можно размещать где угодно
+
+                case MultiTileData.AttachmentType.Ground:
+                    return CheckGroundAttachment(data, rootPosition);
+
+                case MultiTileData.AttachmentType.Ceiling:
+                    return CheckCeilingAttachment(data, rootPosition);
+
+                case MultiTileData.AttachmentType.Wall:
+                    // Пока заглушка - всегда true
+                    Debug.LogWarning("Wall attachment not implemented yet");
+                    return true;
+
+                case MultiTileData.AttachmentType.GroundAndCeiling:
+                    return CheckGroundAttachment(data, rootPosition) && CheckCeilingAttachment(data, rootPosition);
+
+                default:
+                    return true;
+            }
+        }
+
+        /// <summary>
+        /// Проверяет крепление к земле
+        /// </summary>
+        private bool CheckGroundAttachment(MultiTileData data, Vector2Int rootPosition)
+        {
+            // Для каждого тайла в нижнем ряду проверяем, есть ли под ним блок
+            for (int x = 0; x < data.size.x; x++)
+            {
+                Vector2Int groundPos = rootPosition + new Vector2Int(x, -1);
+                if (GetTileAt(groundPos) == null)
+                    return false; // Нет блока под этим тайлом
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Проверяет крепление к потолку
+        /// </summary>
+        private bool CheckCeilingAttachment(MultiTileData data, Vector2Int rootPosition)
+        {
+            // Для каждого тайла в верхнем ряду проверяем, есть ли над ним блок
+            for (int x = 0; x < data.size.x; x++)
+            {
+                Vector2Int ceilingPos = rootPosition + new Vector2Int(x, data.size.y);
+                if (GetTileAt(ceilingPos) == null)
+                    return false; // Нет блока над этим тайлом
+            }
+            return true;
+        }
+
     }
 }
