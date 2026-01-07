@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿// 📁 WorldPainter/Editor/Windows/TilePaletteWindow.cs
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using WorldPainter.Runtime.ScriptableObjects;
@@ -56,10 +57,15 @@ namespace WorldPainter.Editor.Windows
             {
                 EditorGUILayout.BeginHorizontal();
                 
-                if (tile.AutoTileSprites is { Length: > 0 })
+                // ИСПРАВЛЯЕМ: Используем DefaultSprite вместо AutoTileSprites
+                if (tile.DefaultSprite != null)
                 {
-                    Texture2D preview = AssetPreview.GetAssetPreview(tile.AutoTileSprites[0]);
+                    Texture2D preview = AssetPreview.GetAssetPreview(tile.DefaultSprite);
                     GUILayout.Label(preview, GUILayout.Width(50), GUILayout.Height(50));
+                }
+                else
+                {
+                    GUILayout.Label("No Sprite", GUILayout.Width(50), GUILayout.Height(50));
                 }
                 
                 EditorGUILayout.BeginVertical();

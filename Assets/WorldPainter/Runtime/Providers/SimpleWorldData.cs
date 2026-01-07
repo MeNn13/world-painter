@@ -60,6 +60,11 @@ namespace WorldPainter.Runtime.Providers
 
             // ОБНОВЛЯЕМ ТОЛЬКО ОДИН ТАЙЛ (оптимально)
             UpdateSingleTileVisual(chunkCoord, localPos, tile);
+            
+            if (tile != null || GetTileAt(worldPos) != null)
+            {
+                UpdateNeighborTiles(worldPos);
+            }
         }
 
         private void UpdateSingleTileVisual(Vector2Int chunkCoord, Vector2Int localPos, TileData tile)
@@ -82,6 +87,41 @@ namespace WorldPainter.Runtime.Providers
             {
                 // Создаем новый чанк
                 CreateNewChunk(chunkCoord);
+            }
+        }
+        
+        private void UpdateNeighborTiles(Vector2Int worldPos)
+        {
+            // 8 соседних позиций
+            Vector2Int[] neighborOffsets = {
+                new(0, 1), new(1, 1), new(1, 0), new(1, -1),
+                new(0, -1), new(-1, -1), new(-1, 0), new(-1, 1)
+            };
+    
+            foreach (var offset in neighborOffsets)
+            {
+                Vector2Int neighborPos = worldPos + offset;
+                UpdateTileVisual(neighborPos);
+            }
+    
+            // И сам тайл
+            UpdateTileVisual(worldPos);
+        }
+        
+        private void UpdateTileVisual(Vector2Int worldPos)
+        {
+            Vector2Int chunkCoord = WorldGrid.WorldToChunkCoord(worldPos);
+            Vector2Int localPos = WorldGrid.WorldToLocalInChunk(worldPos);
+
+            if (_activeChunks.TryGetValue(chunkCoord, out Chunk chunk) && chunk != null)
+            {
+                // Получаем тайл из чанка
+                Tile tile = chunk.GetTileAtLocalPos(localPos);
+                if (tile != null)
+                {
+                    // Обновляем спрайт тайла
+                    tile.UpdateSprite(this); // this = IWorldDataProvider
+                }
             }
         }
 

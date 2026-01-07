@@ -12,9 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4fbdeb8820b045a387186692e7325f08, type: 3}
   m_Name: Tile Data
   m_EditorClassIdentifier: WorldPainter.Runtime::WorldPainter.Runtime.ScriptableObjects.TileData
-  displayName: Grass
-  autoTileSprites:
-  - {fileID: 8067203182061766998, guid: 3d74704b4de5b1940bb49184ea3ac201, type: 3}
-  - {fileID: -137990372, guid: 3d74704b4de5b1940bb49184ea3ac201, type: 3}
-  - {fileID: -1957612182, guid: 3d74704b4de5b1940bb49184ea3ac201, type: 3}
-  tintColor: {r: 0.40558162, g: 1, b: 0.33018857, a: 1}
+  displayName: "\u0422\u0440\u0430\u0432\u0430"
+  tintColor: {r: 1, g: 1, b: 1, a: 1}
+  tileRules:
+  - ruleSprite: {fileID: 8067203182061766998, guid: 3d74704b4de5b1940bb49184ea3ac201, type: 3}
+    neighborMask: 0200000000000000010000000100000000000000020000000000000000000000
+  - ruleSprite: {fileID: -1957612182, guid: 3d74704b4de5b1940bb49184ea3ac201, type: 3}
+    neighborMask: 0200000000000000020000000000000001000000000000000100000000000000
+  - ruleSprite: {fileID: 1733779675, guid: 3d74704b4de5b1940bb49184ea3ac201, type: 3}
+    neighborMask: 0100000000000000010000000000000002000000000000000200000000000000
+  - ruleSprite: {fileID: 466120026, guid: 3d74704b4de5b1940bb49184ea3ac201, type: 3}
+    neighborMask: 0100000000000000020000000000000002000000000000000100000000000000
+  defaultSprite: {fileID: 1430302136, guid: 3d74704b4de5b1940bb49184ea3ac201, type: 3}
