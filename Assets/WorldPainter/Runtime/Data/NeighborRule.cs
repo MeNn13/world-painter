@@ -35,29 +35,16 @@ namespace WorldPainter.Runtime.Data
 
         public bool Check(TileData neighborTile, TileData currentTile)
         {
-            switch (condition)
+            return condition switch
             {
-                case Condition.This:
-                    return neighborTile == currentTile;
-
-                case Condition.NotThis:
-                    return neighborTile != currentTile;
-
-                case Condition.Any:
-                    return true;
-
-                case Condition.Empty:
-                    return neighborTile == null;
-
-                case Condition.NotEmpty:
-                    return neighborTile != null;
-
-                case Condition.Specific:
-                    return neighborTile != null && neighborTile.TileId == specificTileId;
-
-                default:
-                    return false;
-            }
+                Condition.This => neighborTile == currentTile,
+                Condition.NotThis => neighborTile != currentTile,
+                Condition.Any => true,
+                Condition.Empty => neighborTile == null,
+                Condition.NotEmpty => neighborTile != null,
+                Condition.Specific => neighborTile != null && neighborTile.TileId == specificTileId,
+                _ => false
+            };
         }
     }
 }
