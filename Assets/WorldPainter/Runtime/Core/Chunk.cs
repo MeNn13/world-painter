@@ -10,6 +10,7 @@ namespace WorldPainter.Runtime.Core
         public TilePool tilePool;
 
         private readonly Tile[,] _tiles = new Tile[ChunkData.SIZE, ChunkData.SIZE];
+        private SimpleWorldData _cachedWorldProvider;
 
         public Vector2Int ChunkCoord { get; private set; }
 
@@ -22,6 +23,7 @@ namespace WorldPainter.Runtime.Core
             }
 
             ChunkCoord = chunkCoord;
+            _cachedWorldProvider = FindObjectOfType<SimpleWorldData>();
 
             transform.position = new Vector3(
                 chunkCoord.x * ChunkData.SIZE,
@@ -41,10 +43,35 @@ namespace WorldPainter.Runtime.Core
                     Vector2Int localPos = new Vector2Int(x, y);
                     TileData tileData = data.GetTile(localPos);
 
-                    if (tileData is not null)
+                    if (tileData is MultiTileData multiTileData)
+                    {
+                        // Для мультитайлов:
+                        // 1. Проверяем, не был ли мультитайл уже создан
+                        Vector2Int worldPos = LocalToWorldPosition(localPos);
+                        
+                        // Если это НЕ корневая позиция мультитайла, пропускаем
+                        // (мультитайл создаётся только для своей корневой позиции)
+                        if (_cachedWorldProvider != null)
+                        {
+                            var multiTile = _cachedWorldProvider.GetMultiTileAt(worldPos);
+                            if (multiTile != null)
+                            {
+                                // Эта позиция уже занята мультитайлом - пропускаем создание обычного Tile
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            // Если нет провайдера, всё равно пропускаем MultiTileData
+                            continue;
+                        }
+                    }
+
+                    // Обычные тайлы - создаём как раньше
+                    if (tileData is not null && !(tileData is MultiTileData))
                     {
                         Tile tile = tilePool.GetTile(tileData, LocalToWorldPosition(localPos));
-                        tile.Initialize(tileData, LocalToWorldPosition(localPos), worldProvider);
+                        tile.Initialize(tileData, LocalToWorldPosition(localPos), _cachedWorldProvider);
                         tile.transform.SetParent(transform);
                         _tiles[x, y] = tile;
                     }
@@ -53,6 +80,13 @@ namespace WorldPainter.Runtime.Core
 
         public void SetTile(Vector2Int localPos, TileData tileData)
         {
+            if (tileData is MultiTileData)
+            {
+                // MultiTileData обрабатывается отдельно через SimpleWorldData.PlaceMultiTile()
+                // Не создаём для него обычный Tile
+                return;
+            }
+            
             DeleteHasOldTile();
 
             CreateNewTile();
@@ -110,6 +144,35 @@ namespace WorldPainter.Runtime.Core
                         tilePool?.ReturnTile(_tiles[x, y]);
                         _tiles[x, y] = null;
                     }
+        }
+        
+        /// <summary>
+        /// Обновляет все тайлы в чанке (например, при изменении соседей)
+        /// </summary>
+        public void UpdateAllTiles()
+        {
+            for (int x = 0; x < ChunkData.SIZE; x++)
+                for (int y = 0; y < ChunkData.SIZE; y++)
+                {
+                    var tile = _tiles[x, y];
+                    if (tile != null && _cachedWorldProvider != null)
+                    {
+                        tile.UpdateSprite(_cachedWorldProvider);
+                    }
+                }
+        }
+
+        
+        /// <summary>
+        /// Удаляет тайл из чанка по локальной позиции
+        /// </summary>
+        public void RemoveTile(Vector2Int localPos)
+        {
+            if (_tiles[localPos.x, localPos.y] != null)
+            {
+                tilePool?.ReturnTile(_tiles[localPos.x, localPos.y]);
+                _tiles[localPos.x, localPos.y] = null;
+            }
         }
 
         private Vector2Int LocalToWorldPosition(Vector2Int localPos)
