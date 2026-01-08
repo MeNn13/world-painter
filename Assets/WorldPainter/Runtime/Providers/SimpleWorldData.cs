@@ -13,10 +13,9 @@ namespace WorldPainter.Runtime.Providers
     {
         private readonly Dictionary<Vector2Int, ChunkData> _chunks = new();
         private readonly Dictionary<Vector2Int, Chunk> _activeChunks = new();
-
-        // НОВЫЕ ПОЛЯ для мультитайлов
-        private Dictionary<Vector2Int, MultiTile> _multiTiles = new(); // Позиция → MultiTile
-        private Dictionary<Vector2Int, Vector2Int> _positionToMultiTileRoot = new(); // Быстрый поиск корня
+        
+        private readonly Dictionary<Vector2Int, MultiTile> _multiTiles = new();
+        private readonly Dictionary<Vector2Int, Vector2Int> _positionToMultiTileRoot = new();
 
         [Obsolete("Obsolete")]
         private void Start()
@@ -142,6 +141,7 @@ namespace WorldPainter.Runtime.Providers
             }
         }
 
+        [Obsolete("Obsolete")]
         private void CreateNewChunk(Vector2Int chunkCoord)
         {
             if (!_chunks.TryGetValue(chunkCoord, out ChunkData chunkData))
@@ -229,10 +229,7 @@ namespace WorldPainter.Runtime.Providers
 
             return oldTile; // Возвращаем старый тайл для Undo
         }
-
-        /// <summary>
-        /// Проверяет можно ли разместить мультитайл
-        /// </summary>
+        
         public bool CanPlaceMultiTile(MultiTileData data, Vector2Int rootPosition)
         {
             // 1. Проверяем что все клетки свободны
@@ -251,10 +248,7 @@ namespace WorldPainter.Runtime.Providers
             // 2. Проверяем правила крепления
             return CheckAttachmentRules(data, rootPosition);
         }
-
-        /// <summary>
-        /// Размещает мультитайл
-        /// </summary>
+        
         public bool PlaceMultiTile(MultiTileData data, Vector2Int rootPosition)
         {
             if (!CanPlaceMultiTile(data, rootPosition))
@@ -318,10 +312,7 @@ namespace WorldPainter.Runtime.Providers
             Debug.Log($"Placed MultiTile {data.DisplayName} at {rootPosition}");
             return true;
         }
-
-        /// <summary>
-        /// Удаляет мультитайл по любой позиции внутри него
-        /// </summary>
+        
         public bool RemoveMultiTileAt(Vector2Int anyPosition)
         {
             if (!_positionToMultiTileRoot.TryGetValue(anyPosition, out Vector2Int rootPosition))
@@ -363,19 +354,13 @@ namespace WorldPainter.Runtime.Providers
             Debug.Log($"Removed MultiTile {multiTile.Data.DisplayName}");
             return true;
         }
-
-        /// <summary>
-        /// Получает мультитайл по позиции
-        /// </summary>
+        
         public MultiTile GetMultiTileAt(Vector2Int position)
         {
             _multiTiles.TryGetValue(position, out MultiTile multiTile);
             return multiTile;
         }
-
-        /// <summary>
-        /// Проверяет правила крепления для мультитайла
-        /// </summary>
+        
         private bool CheckAttachmentRules(MultiTileData data, Vector2Int rootPosition)
         {
             switch (data.attachmentType)
@@ -401,13 +386,9 @@ namespace WorldPainter.Runtime.Providers
                     return true;
             }
         }
-
-        /// <summary>
-        /// Проверяет крепление к земле
-        /// </summary>
+        
         private bool CheckGroundAttachment(MultiTileData data, Vector2Int rootPosition)
         {
-            // Для каждого тайла в нижнем ряду проверяем, есть ли под ним блок
             for (int x = 0; x < data.size.x; x++)
             {
                 Vector2Int groundPos = rootPosition + new Vector2Int(x, -1);
@@ -416,13 +397,9 @@ namespace WorldPainter.Runtime.Providers
             }
             return true;
         }
-
-        /// <summary>
-        /// Проверяет крепление к потолку
-        /// </summary>
+        
         private bool CheckCeilingAttachment(MultiTileData data, Vector2Int rootPosition)
         {
-            // Для каждого тайла в верхнем ряду проверяем, есть ли над ним блок
             for (int x = 0; x < data.size.x; x++)
             {
                 Vector2Int ceilingPos = rootPosition + new Vector2Int(x, data.size.y);
@@ -431,6 +408,5 @@ namespace WorldPainter.Runtime.Providers
             }
             return true;
         }
-
     }
 }
