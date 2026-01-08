@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4fbdeb8820b045a387186692e7325f08, type: 3}
-  m_Name: Tile Data
+  m_Name: RuleTile Data
   m_EditorClassIdentifier: WorldPainter.Runtime::WorldPainter.Runtime.ScriptableObjects.TileData
   displayName: "\u0422\u0440\u0430\u0432\u0430"
   tintColor: {r: 1, g: 1, b: 1, a: 1}

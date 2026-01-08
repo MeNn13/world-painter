@@ -1,20 +1,14 @@
 ﻿using UnityEngine;
 using WorldPainter.Runtime.Data;
-using WorldPainter.Runtime.ScriptableObjects;
+using WorldPainter.Runtime.Providers.MultiTile;
+using WorldPainter.Runtime.Providers.Tile;
+using WorldPainter.Runtime.Providers.Wall;
 
 namespace WorldPainter.Runtime.Providers
 {
-    public interface IWorldDataProvider
+    public interface IWorldDataProvider : ITileDataProvider, IWallDataProvider, IMultiTileDataProvider
     {
-        TileData GetTileAt(Vector2Int worldPos);
-        void SetTileAt(Vector2Int worldPos, TileData tile);
-        
         ChunkData GetChunkData(Vector2Int chunkCoord);
         void SetChunkData(Vector2Int chunkCoord, ChunkData chunk);
-        
-        TileData SetTileAtWithUndo(Vector2Int worldPos, TileData tile);
-        bool CanPlaceMultiTile(MultiTileData data, Vector2Int rootPosition);
-        bool PlaceMultiTile(MultiTileData data, Vector2Int rootPosition);
-        bool RemoveMultiTileAt(Vector2Int anyPosition);
     }
 }
