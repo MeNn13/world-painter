@@ -31,8 +31,8 @@ namespace WorldPainter.Runtime.Core
                 
                 // Позиционируем по центру области с учётом pivotOffset
                 Vector3 spritePosition = new Vector3(
-                    rootPosition.x + data.pivotOffset.x,
-                    rootPosition.y + data.pivotOffset.y,
+                    rootPosition.x + data.pivotOffset.x - 0.5f,
+                    rootPosition.y + data.pivotOffset.y - 0.5f,
                     0
                 );
                 

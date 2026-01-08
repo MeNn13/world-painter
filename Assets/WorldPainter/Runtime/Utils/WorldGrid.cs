@@ -26,6 +26,43 @@ namespace WorldPainter.Runtime.Utils
                 chunkCoord.x * CHUNK_SIZE + localPos.x,
                 chunkCoord.y * CHUNK_SIZE + localPos.y);
         }
+        
+        // НОВЫЙ МЕТОД: Конвертация мировых координат в позицию сетки
+        public static Vector2Int WorldToGridPosition(Vector3 worldPosition, bool snapToCenter = true)
+        {
+            if (snapToCenter)
+            {
+                // Для обычных тайлов: центр клетки
+                return new Vector2Int(
+                    Mathf.FloorToInt(worldPosition.x + 0.5f),
+                    Mathf.FloorToInt(worldPosition.y + 0.5f)
+                    );
+            }
+            
+            // Для мультитайлов: левый нижний угол
+            return new Vector2Int(
+                Mathf.FloorToInt(worldPosition.x),
+                Mathf.FloorToInt(worldPosition.y)
+                );
+        }
+
+        // НОВЫЙ МЕТОД: Конвертация позиции сетки в мировые координаты
+        public static Vector3 GridToWorldPosition(Vector2Int gridPosition, bool isCenter = true)
+        {
+            if (isCenter)
+            {
+                // Центр клетки
+                return new Vector3(
+                    gridPosition.x + 0.5f,
+                    gridPosition.y + 0.5f,
+                    0);
+            }
+            
+            return new Vector3(
+                gridPosition.x,
+                gridPosition.y,
+                0);
+        }
 
         private static int PositiveMod(int x, int m)
         {

@@ -275,14 +275,13 @@ namespace WorldPainter.Runtime.Providers
             if (multiTile == null)
                 return false;
 
-            // Запоминаем во всех клетках
+            // ✅ ШАГ 1: Сохраняем мультитайл в словарях
             var occupiedPositions = data.GetAllOccupiedPositions(rootPosition);
             foreach (var pos in occupiedPositions)
             {
                 _multiTiles[pos] = multiTile;
                 _positionToMultiTileRoot[pos] = rootPosition;
 
-                // В данных чанка отмечаем что здесь мультитайл
                 Vector2Int chunkCoord = WorldGrid.WorldToChunkCoord(pos);
                 Vector2Int localPos = WorldGrid.WorldToLocalInChunk(pos);
 
@@ -292,11 +291,28 @@ namespace WorldPainter.Runtime.Providers
                     _chunks[chunkCoord] = chunkData;
                 }
 
-                // Сохраняем ссылку на MultiTileData вместо null
+                // Сохраняем MultiTileData в чанк
                 chunkData.SetTile(localPos, data);
             }
 
-            // Родитель - этот объект или можно в отдельный контейнер
+            // ✅ ШАГ 3: Очищаем визуальные Tile объекты из активных чанков
+            foreach (var pos in occupiedPositions)
+            {
+                Vector2Int chunkCoord = WorldGrid.WorldToChunkCoord(pos);
+                Vector2Int localPos = WorldGrid.WorldToLocalInChunk(pos);
+
+                if (_activeChunks.TryGetValue(chunkCoord, out Chunk chunk))
+                {
+                    // Удаляем визуальный Tile объект
+                    chunk.RemoveTile(localPos);
+
+                    // ✅ ВАЖНО: Обновляем соседние тайлы, т.к. теперь здесь мультитайл
+                    // Это нужно для тайлов с автоподбором спрайтов (grass, water и т.д.)
+                    UpdateNeighborTiles(pos);
+                }
+            }
+
+            // Родитель
             multiTile.transform.SetParent(transform);
 
             Debug.Log($"Placed MultiTile {data.DisplayName} at {rootPosition}");

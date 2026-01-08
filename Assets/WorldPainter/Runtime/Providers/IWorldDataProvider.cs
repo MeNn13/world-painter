@@ -13,5 +13,8 @@ namespace WorldPainter.Runtime.Providers
         void SetChunkData(Vector2Int chunkCoord, ChunkData chunk);
         
         TileData SetTileAtWithUndo(Vector2Int worldPos, TileData tile);
+        bool CanPlaceMultiTile(MultiTileData data, Vector2Int rootPosition);
+        bool PlaceMultiTile(MultiTileData data, Vector2Int rootPosition);
+        bool RemoveMultiTileAt(Vector2Int anyPosition);
     }
 }
