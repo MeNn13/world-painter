@@ -72,9 +72,14 @@ namespace WorldPainter.Editor.Tools.Painters
             Vector2Int previewPos = CalculateGridPosition(worldPoint);
             Vector3 worldPosition = WorldGrid.GridToWorldPosition(previewPos) - new Vector3(0.5f, 0.5f, 0);
             
-            PreviewManager.GetOrCreateSpriteRenderer("wall");
-            PreviewManager.SetPreviewTransform("wall", worldPosition);
-            PreviewManager.SetPreviewSprite("wall", _selectedWall.DefaultSprite,
+            SpriteRenderer renderer = PreviewManager.GetOrCreateSpriteRenderer("wall_preview");
+            if (renderer == null)
+            {
+                Debug.LogError("Failed to create sprite renderer for preview");
+                return;
+            }
+            PreviewManager.SetPreviewTransform("wall_preview", worldPosition);
+            PreviewManager.SetPreviewSprite("wall_preview", _selectedWall.DefaultSprite,
                 new Color(0.8f, 0.8f, 1f, 0.6f)); // Голубоватый оттенок
             
             Handles.color = new Color(0.3f, 0.3f, 1f, 1f); // Синий
@@ -86,7 +91,7 @@ namespace WorldPainter.Editor.Tools.Painters
         
         public override void Cleanup()
         {
-            PreviewManager.DestroyPreview("wall");
+            PreviewManager.DestroyPreview("wall_preview");
         }
     }
 }

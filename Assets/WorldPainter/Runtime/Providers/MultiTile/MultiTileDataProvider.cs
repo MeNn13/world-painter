@@ -4,13 +4,14 @@ using UnityEditor;
 using UnityEngine;
 using WorldPainter.Runtime.Core;
 using WorldPainter.Runtime.Data;
+using WorldPainter.Runtime.Providers.Dependencies;
 using WorldPainter.Runtime.Providers.Tile;
 using WorldPainter.Runtime.Providers.Wall;
 using WorldPainter.Runtime.ScriptableObjects;
 
 namespace WorldPainter.Runtime.Providers.MultiTile
 {
-    public class MultiTileDataProvider : BaseWorldDataProvider, IMultiTileDataProvider
+    public class MultiTileDataProvider : BaseWorldDataProvider, IMultiTileDataProvider, IRequiresDependencies
     {
         private readonly Dictionary<Vector2Int, Core.MultiTile> _multiTiles = new();
         private readonly Dictionary<Vector2Int, Vector2Int> _positionToMultiTileRoot  = new();
@@ -19,16 +20,23 @@ namespace WorldPainter.Runtime.Providers.MultiTile
         private IWallDataProvider _wallProvider;
         private TilePool _tilePool;
         
-        [Obsolete("Obsolete")]
-        private void Awake()
+        private bool _dependenciesInjected;
+        
+        public void InjectDependencies(IDependencyContainer container)
         {
-            _tileProvider = FindObjectOfType<WorldManager>()?.TileProvider;
-            _wallProvider = FindObjectOfType<WorldManager>()?.WallProvider;
-            _tilePool = FindObjectOfType<TilePool>();
+            if (_dependenciesInjected) return;
+            
+            _tileProvider = container?.TileProvider;
+            _wallProvider = container?.WallProvider;
+            _tilePool = container?.TilePool;
+            
+            _dependenciesInjected = true;
         }
 
         public bool CanPlaceMultiTile(MultiTileData data, Vector2Int rootPosition)
         {
+            ValidateDependencies();
+            
             if (data is null) return false;
             
             var occupiedPositions = data.GetAllOccupiedPositions(rootPosition);
@@ -163,6 +171,15 @@ namespace WorldPainter.Runtime.Providers.MultiTile
             }
             
             return true;
+        }
+        private void ValidateDependencies()
+        {
+            if (!_dependenciesInjected)
+            {
+                Debug.LogError("Dependencies not injected for MultiTileDataProvider!");
+                throw new InvalidOperationException(
+                    "MultiTileDataProvider requires dependencies to be injected via IRequiresDependencies");
+            }
         }
         
         public ChunkData GetChunkData(Vector2Int chunkCoord) => GetChunk(chunkCoord);

@@ -1,5 +1,4 @@
-﻿// 📁 WorldPainter/Editor/Windows/TilePaletteWindow.cs
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using WorldPainter.Runtime.ScriptableObjects;
@@ -11,32 +10,40 @@ namespace WorldPainter.Editor.Windows
         private readonly List<TileData> _tileAssets = new();
         private TileData _selectedTile;
         private Vector2 _scrollPosition;
-        private static TilePaletteWindow _instance;
         
-        public static TilePaletteWindow GetOrCreateWindow()
-        {
-            _instance ??= GetWindow<TilePaletteWindow>("Tile Palette");
-            return _instance;
-        }
+        private static TilePaletteWindow _instance;
+
 
         [MenuItem("Tools/WorldPainter/TilePalette")]
         public static void ShowWindow()
         {
             GetOrCreateWindow();
         }
+
+        private static TilePaletteWindow GetOrCreateWindow()
+        {
+            _instance ??= GetWindow<TilePaletteWindow>("Tile Palette");
+            return _instance;
+        }
         
+        public static TilePaletteWindow GetWindowIfOpen()
+        {
+            // Ищем среди всех открытых окон
+            var windows = Resources.FindObjectsOfTypeAll<TilePaletteWindow>();
+            return windows.Length > 0 ? windows[0] : null;
+        }
+
         private void OnDestroy()
         {
             if (_instance == this)
-            {
                 _instance = null;
-            }
         }
         
         public TileData GetSelectedTile() => _selectedTile;
 
         private void OnEnable()
         {
+            _instance = this;
             RefreshTileList();
         }
 
@@ -58,7 +65,7 @@ namespace WorldPainter.Editor.Windows
                 EditorGUILayout.BeginHorizontal();
                 
                 // ИСПРАВЛЯЕМ: Используем DefaultSprite вместо AutoTileSprites
-                if (tile.DefaultSprite != null)
+                if (tile.DefaultSprite is not null)
                 {
                     Texture2D preview = AssetPreview.GetAssetPreview(tile.DefaultSprite);
                     GUILayout.Label(preview, GUILayout.Width(50), GUILayout.Height(50));

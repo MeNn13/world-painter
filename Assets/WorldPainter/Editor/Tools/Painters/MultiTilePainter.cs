@@ -85,9 +85,14 @@ namespace WorldPainter.Editor.Tools.Painters
                 _selectedMultiTile.pivotOffset.y,
                 0);
             
-            PreviewManager.GetOrCreateSpriteRenderer("multitile");
-            PreviewManager.SetPreviewTransform("multitile", spritePosition);
-            PreviewManager.SetPreviewSprite("multitile", _selectedMultiTile.DefaultSprite,
+            SpriteRenderer renderer = PreviewManager.GetOrCreateSpriteRenderer("multitile_preview");
+            if (renderer == null)
+            {
+                Debug.LogError("Failed to create sprite renderer for preview");
+                return;
+            }
+            PreviewManager.SetPreviewTransform("multitile_preview", spritePosition);
+            PreviewManager.SetPreviewSprite("multitile_preview", _selectedMultiTile.DefaultSprite,
                 _lastPlacementValid ? new Color(1, 1, 1, 0.6f) : new Color(1, 0.5f, 0.5f, 0.6f));
             
             DrawPreviewVisuals(bottomLeftPosition, spritePosition);
@@ -99,37 +104,52 @@ namespace WorldPainter.Editor.Tools.Painters
                 _selectedMultiTile.pivotOffset.x,
                 _selectedMultiTile.pivotOffset.y,
                 0);
-            
-            Handles.color = _lastPlacementValid ? Color.green : Color.red;
+    
+            // Оптимизация: кэшируем цвета
+            Color wireColor = _lastPlacementValid ? Color.green : Color.red;
+            Handles.color = wireColor;
             Handles.DrawWireCube(tileAreaCenter, 
                 new Vector3(_selectedMultiTile.size.x, _selectedMultiTile.size.y, 0));
-            
-            // Точка привязки
+    
+            // Точка привязки - рисуем только если нужна
             Handles.color = Color.cyan;
-            Handles.DrawSolidDisc(spritePosition, Vector3.forward, 0.1f);
-            
-            // Левый нижний угол
-            Handles.color = Color.yellow;
-            Handles.DrawWireCube(bottomLeftPosition, new Vector3(0.1f, 0.1f, 0));
-            
-            // Сетка клеток
-            if (_selectedMultiTile.size.x > 1 || _selectedMultiTile.size.y > 1)
+            Handles.DrawSolidDisc(spritePosition, Vector3.forward, 0.05f); // Уменьшили радиус
+    
+            // Левый нижний угол - можно убрать если не нужен
+            // Handles.color = Color.yellow;
+            // Handles.DrawWireCube(bottomLeftPosition, new Vector3(0.1f, 0.1f, 0));
+    
+            // Сетка клеток - ОПТИМИЗАЦИЯ: рисуем только для больших объектов
+            if (_selectedMultiTile.size.x > 3 || _selectedMultiTile.size.y > 3)
             {
-                Handles.color = _lastPlacementValid ? 
-                    new Color(0, 1, 0, 0.3f) : new Color(1, 0, 0, 0.3f);
-                    
+                Color gridColor = _lastPlacementValid ? 
+                    new Color(0, 1, 0, 0.2f) : new Color(1, 0, 0, 0.2f); // Уменьшили альфа
+        
+                Handles.color = gridColor;
+        
+                // Рисуем только внешнюю границу клеток
                 for (int x = 0; x < _selectedMultiTile.size.x; x++)
+                {
                     for (int y = 0; y < _selectedMultiTile.size.y; y++)
                     {
+                        // Пропускаем внутренние клетки для больших объектов
+                        if (_selectedMultiTile.size.x > 5 && _selectedMultiTile.size.y > 5)
+                        {
+                            if (x > 0 && x < _selectedMultiTile.size.x - 1 && 
+                                y > 0 && y < _selectedMultiTile.size.y - 1)
+                                continue;
+                        }
+                
                         Vector3 cellCenter = bottomLeftPosition + new Vector3(x + 0.5f, y + 0.5f, 0);
-                        Handles.DrawWireCube(cellCenter, new Vector3(0.95f, 0.95f, 0));
+                        Handles.DrawWireCube(cellCenter, new Vector3(0.98f, 0.98f, 0));
                     }
+                }
             }
         }
         
         public override void Cleanup()
         {
-            PreviewManager.DestroyPreview("multi tile");
+            PreviewManager.DestroyPreview("multitile_preview");
             _lastPreviewPosition = Vector2Int.zero;
             _lastPlacementValid = false;
         }

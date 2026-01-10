@@ -2,6 +2,7 @@
 using UnityEngine;
 using WorldPainter.Runtime.Core;
 using WorldPainter.Runtime.Data;
+using WorldPainter.Runtime.Providers.Dependencies;
 using WorldPainter.Runtime.Providers.MultiTile;
 using WorldPainter.Runtime.Providers.Tile;
 using WorldPainter.Runtime.Providers.Wall;
@@ -9,37 +10,57 @@ using WorldPainter.Runtime.ScriptableObjects;
 
 namespace WorldPainter.Runtime.Providers
 {
-    public class WorldManager : MonoBehaviour, IWorldDataProvider
+    public class WorldManager : MonoBehaviour, IWorldDataProvider, IWorldDataProviderEditor, IDependencyContainer
     {
-        [Header("Data Providers")] [SerializeField] private TileDataProvider tileDataProvider;
+        [Header("Data Providers")] 
+        [SerializeField] private TileDataProvider tileDataProvider;
         [SerializeField] private WallDataProvider wallDataProvider;
         [SerializeField] private MultiTileDataProvider multiTileDataProvider;
 
-        [Header("Dependencies")] [SerializeField] private TilePool tilePool;
+        [Header("Dependencies")]
+        [SerializeField] private TilePool tilePool;
 
+        private bool _initialized = false;
+        public bool IsInitialized => _initialized;
         public ITileDataProvider TileProvider => tileDataProvider;
         public IWallDataProvider WallProvider => wallDataProvider;
         public IMultiTileDataProvider MultiTileProvider => multiTileDataProvider;
+        public TilePool TilePool => tilePool;
 
         private void Awake()
         {
-            InitializeProviders();
-            LinkProviders();
+            if (!Application.isPlaying) return;
+            InitializeForEditor();
+        }
+        public void InitializeForEditor()
+        {
+            if (_initialized) return;
+        
+            ValidateAndSetup();
+            InjectDependencies();
+            _initialized = true;
         }
 
-        [Obsolete("Obsolete")]
-        private void InitializeProviders()
+        private void ValidateAndSetup()
         {
-            tileDataProvider ??= GetComponentInChildren<TileDataProvider>();
-            wallDataProvider ??= GetComponentInChildren<WallDataProvider>();
-            multiTileDataProvider ??= GetComponentInChildren<MultiTileDataProvider>();
-            tilePool ??= FindObjectOfType<TilePool>();
+            tileDataProvider ??= GetComponent<TileDataProvider>();
+            wallDataProvider ??= GetComponent<WallDataProvider>();
+            multiTileDataProvider ??= GetComponent<MultiTileDataProvider>();
+            tilePool ??= GetComponentInChildren<TilePool>(true);
+            
+            tileDataProvider ??= gameObject.AddComponent<TileDataProvider>();
+            wallDataProvider ??= gameObject.AddComponent<WallDataProvider>();
+            multiTileDataProvider ??= gameObject.AddComponent<MultiTileDataProvider>();
+            
+            Debug.Assert(tileDataProvider is not null, "TileDataProvider is required!");
+            Debug.Assert(wallDataProvider is not null, "WallDataProvider is required!");
+            Debug.Assert(multiTileDataProvider is not null, "MultiTileDataProvider is required!");
+            Debug.Assert(tilePool is not null, "TilePool is required!");
         }
-
-        private void LinkProviders()
+        private void InjectDependencies()
         {
-            // Можно добавить связи между провайдерами при необходимости
-            // Например, MultiTileDataProvider может нуждаться в ссылках на другие провайдеры
+            IRequiresDependencies multiTile = multiTileDataProvider;
+            multiTile?.InjectDependencies(this);
         }
         
         #region Tile

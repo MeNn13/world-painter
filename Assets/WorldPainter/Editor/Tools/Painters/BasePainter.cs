@@ -16,7 +16,6 @@ namespace WorldPainter.Editor.Tools.Painters
         
         public virtual void SetWorldProvider(IWorldDataProvider provider) => 
             WorldProvider = provider;
-            
         public virtual void SetPreviewManager(PreviewManager manager) => 
             PreviewManager = manager;
             

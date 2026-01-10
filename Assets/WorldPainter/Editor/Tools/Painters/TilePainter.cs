@@ -72,9 +72,14 @@ namespace WorldPainter.Editor.Tools.Painters
             Vector2Int previewPos = CalculateGridPosition(worldPoint);
             Vector3 worldPosition = WorldGrid.GridToWorldPosition(previewPos) - new Vector3(0.5f, 0.5f, 0);
             
-            PreviewManager.GetOrCreateSpriteRenderer("tile");
-            PreviewManager.SetPreviewTransform("tile", worldPosition);
-            PreviewManager.SetPreviewSprite("tile", _selectedTile.DefaultSprite, 
+            SpriteRenderer renderer = PreviewManager.GetOrCreateSpriteRenderer("tile_preview");
+            if (renderer == null)
+            {
+                Debug.LogError("Failed to create sprite renderer for preview");
+                return;
+            }
+            PreviewManager.SetPreviewTransform("tile_preview", worldPosition);
+            PreviewManager.SetPreviewSprite("tile_preview", _selectedTile.DefaultSprite, 
                 new Color(1, 1, 1, 0.6f));
             
             Handles.color = Color.cyan;
@@ -83,7 +88,7 @@ namespace WorldPainter.Editor.Tools.Painters
         
         public override void Cleanup()
         {
-            PreviewManager.DestroyPreview("tile");
+            PreviewManager.DestroyPreview("tile_preview");
         }
     }
 }

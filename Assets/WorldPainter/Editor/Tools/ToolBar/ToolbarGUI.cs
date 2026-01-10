@@ -3,30 +3,17 @@ using UnityEngine;
 using WorldPainter.Editor.Windows;
 using WorldPainter.Runtime.ScriptableObjects;
 
-namespace WorldPainter.Editor.Tools
+namespace WorldPainter.Editor.Tools.ToolBar
 {
     public class ToolbarGUI
     {
-        private readonly TilePaletteWindow _paletteWindow;
-        
-        private bool _isPainting = false;
-        private PaintMode _paintMode = PaintMode.Paint;
-        private ToolType _activeTool = ToolType.Tile;
-        
-        public bool IsPainting => _isPainting;
-        public PaintMode CurrentPaintMode => _paintMode;
-        public ToolType ActiveTool => _activeTool;
-        
+        public bool IsPainting { get; private set; }
+        public PaintMode CurrentPaintMode { get; private set; } = PaintMode.Paint;
+        public ToolType ActiveTool { get; private set; } = ToolType.Tile;
+
         public TileData SelectedTile { get; private set; }
         public MultiTileData SelectedMultiTile { get; private set; }
         public WallData SelectedWall { get; private set; }
-        
-        public enum ToolType { Tile, Wall, MultiTile }
-        
-        public ToolbarGUI()
-        {
-            _paletteWindow = TilePaletteWindow.GetOrCreateWindow();
-        }
         
         public void DrawToolbar()
         {
@@ -48,11 +35,8 @@ namespace WorldPainter.Editor.Tools
             // Информация о выбранном объекте
             DrawSelectionInfo();
             
-            // Выбор инструмента
-            DrawToolSelection();
-            
             // Выбор режима
-            _paintMode = (PaintMode)EditorGUILayout.EnumPopup("Mode:", _paintMode);
+            CurrentPaintMode = (PaintMode)EditorGUILayout.EnumPopup("Mode:", CurrentPaintMode);
             
             // Кнопка рисования
             DrawPaintButton();
@@ -71,7 +55,16 @@ namespace WorldPainter.Editor.Tools
         
         private void UpdateSelectedFromPalette()
         {
-            var newTile = _paletteWindow.GetSelectedTile();
+            var window = TilePaletteWindow.GetWindowIfOpen();
+            if (window == null)
+            {
+                SelectedTile = null;
+                SelectedMultiTile = null;
+                SelectedWall = null;
+                return;
+            }
+            
+            var newTile = window.GetSelectedTile();
             if (newTile != SelectedTile)
             {
                 SelectedTile = newTile;
@@ -80,11 +73,11 @@ namespace WorldPainter.Editor.Tools
                 
                 // Автоматически переключаем инструмент по типу выбранного объекта
                 if (SelectedMultiTile != null)
-                    _activeTool = ToolType.MultiTile;
+                    ActiveTool = ToolType.MultiTile;
                 else if (SelectedWall != null)
-                    _activeTool = ToolType.Wall;
+                    ActiveTool = ToolType.Wall;
                 else if (SelectedTile != null)
-                    _activeTool = ToolType.Tile;
+                    ActiveTool = ToolType.Tile;
                     
                 ScenePainter.Instance?.CleanupAllPreviews();
             }
@@ -105,30 +98,12 @@ namespace WorldPainter.Editor.Tools
             EditorGUILayout.Space(5);
         }
         
-        private void DrawToolSelection()
-        {
-            GUILayout.Label("Tool:", EditorStyles.miniBoldLabel);
-            EditorGUILayout.BeginHorizontal();
-            
-            if (GUILayout.Toggle(_activeTool == ToolType.Tile, "Tile", "Button"))
-                _activeTool = ToolType.Tile;
-                
-            if (GUILayout.Toggle(_activeTool == ToolType.Wall, "Wall", "Button"))
-                _activeTool = ToolType.Wall;
-                
-            if (GUILayout.Toggle(_activeTool == ToolType.MultiTile, "MultiTile", "Button"))
-                _activeTool = ToolType.MultiTile;
-                
-            EditorGUILayout.EndHorizontal();
-            EditorGUILayout.Space(5);
-        }
-        
         private void DrawPaintButton()
         {
-            bool wasPainting = _isPainting;
-            _isPainting = GUILayout.Toggle(_isPainting, "Paint (Hold Ctrl)", "Button");
+            bool wasPainting = IsPainting;
+            IsPainting = GUILayout.Toggle(IsPainting, "Paint (Hold Ctrl)", "Button");
             
-            if (wasPainting && !_isPainting)
+            if (wasPainting && !IsPainting)
             {
                 ScenePainter.Instance?.CleanupAllPreviews();
             }
