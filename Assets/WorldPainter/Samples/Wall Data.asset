@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Wall Data
   m_EditorClassIdentifier: WorldPainter.Runtime::WorldPainter.Runtime.ScriptableObjects.WallData
   displayName: "\u0417\u0435\u043C\u043B\u044F"
-  tintColor: {r: 1, g: 1, b: 1, a: 1}
+  tintColor: {r: 0.35, g: 0.35, b: 0.35, a: 1}
   tileRules: []
   defaultSprite: {fileID: -951137418, guid: 3d74704b4de5b1940bb49184ea3ac201, type: 3}
   isSolid: 0

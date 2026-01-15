@@ -16,8 +16,8 @@ namespace WorldPainter.Runtime.Providers.MultiTile
         private readonly Dictionary<Vector2Int, Core.MultiTile> _multiTiles = new();
         private readonly Dictionary<Vector2Int, Vector2Int> _positionToMultiTileRoot  = new();
         
-        private ITileDataProvider _tileProvider;
-        private IWallDataProvider _wallProvider;
+        private ITileService _tileProvider;
+        private IWallService _wallProvider;
         private TilePool _tilePool;
         
         private bool _dependenciesInjected;
@@ -51,7 +51,7 @@ namespace WorldPainter.Runtime.Providers.MultiTile
             
             return CheckAttachmentRules(data, rootPosition);
         }
-        public bool PlaceMultiTile(MultiTileData data, Vector2Int rootPosition)
+        public bool SetMultiTile(MultiTileData data, Vector2Int rootPosition)
         {
             if (!CanPlaceMultiTile(data, rootPosition))
                 return false;
@@ -116,6 +116,10 @@ namespace WorldPainter.Runtime.Providers.MultiTile
 
             Debug.Log($"Removed MultiTile {multiTile.Data.DisplayName}");
             return true;
+        }
+        public bool TrySetMultiTile(MultiTileData data, Vector2Int rootPosition)
+        {
+            throw new NotImplementedException();
         }
         public Core.MultiTile GetMultiTileAt(Vector2Int position)
         {
@@ -185,5 +189,6 @@ namespace WorldPainter.Runtime.Providers.MultiTile
         public ChunkData GetChunkData(Vector2Int chunkCoord) => GetChunk(chunkCoord);
         public void SetChunkData(Vector2Int chunkCoord, ChunkData chunk) => 
             Chunks[chunkCoord] = chunk;
+        public MultiTileDataProvider(IWorldFacade worldFacade) : base(worldFacade) { }
     }
 }

@@ -26,7 +26,7 @@ namespace WorldPainter.Editor.Tools.ToolBar
             GUILayout.Label("World Painter", EditorStyles.boldLabel);
             
             // Кнопка палитры
-            if (GUILayout.Button("Tile Palette"))
+            if (GUILayout.Button("TileView Palette"))
                 TilePaletteWindow.ShowWindow();
             
             // Получение выбранного тайла из палитры
@@ -92,7 +92,7 @@ namespace WorldPainter.Editor.Tools.ToolBar
             else if (SelectedWall != null)
                 info = $"Wall: {SelectedWall.DisplayName}";
             else if (SelectedTile != null)
-                info = $"Tile: {SelectedTile.DisplayName}";
+                info = $"TileView: {SelectedTile.DisplayName}";
                 
             GUILayout.Label(info, EditorStyles.wordWrappedMiniLabel);
             EditorGUILayout.Space(5);

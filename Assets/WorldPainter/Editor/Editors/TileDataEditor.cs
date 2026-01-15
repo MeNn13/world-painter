@@ -30,7 +30,7 @@ namespace WorldPainter.Editor.Editors
             EditorGUILayout.Space(10);
 
             // Базовые настройки
-            EditorGUILayout.LabelField("Tile Data", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("TileView Data", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(_displayNameProp);
             EditorGUILayout.PropertyField(_tintColorProp);
 
@@ -41,7 +41,7 @@ namespace WorldPainter.Editor.Editors
             DrawSpriteSelector(_defaultSpriteProp);
 
             EditorGUILayout.Space(20);
-            EditorGUILayout.LabelField("Tile Rules", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("TileView Rules", EditorStyles.boldLabel);
 
             // Кнопка добавления правила
             if (GUILayout.Button("+ Add New Rule", GUILayout.Height(30)))

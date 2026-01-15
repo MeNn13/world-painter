@@ -22,7 +22,7 @@ namespace WorldPainter.Editor.Windows
 
         private static TilePaletteWindow GetOrCreateWindow()
         {
-            _instance ??= GetWindow<TilePaletteWindow>("Tile Palette");
+            _instance ??= GetWindow<TilePaletteWindow>("TileView Palette");
             return _instance;
         }
         
@@ -49,7 +49,7 @@ namespace WorldPainter.Editor.Windows
 
         private void OnGUI()
         {
-            GUILayout.Label("Tile Palette", EditorStyles.boldLabel);
+            GUILayout.Label("TileView Palette", EditorStyles.boldLabel);
             
             if (GUILayout.Button("Refresh Tiles"))
             {
@@ -96,7 +96,7 @@ namespace WorldPainter.Editor.Windows
             if (_selectedTile is not null)
             {
                 EditorGUILayout.Space();
-                EditorGUILayout.LabelField("Selected Tile:", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField("Selected TileView:", EditorStyles.boldLabel);
                 EditorGUILayout.LabelField($"Name: {_selectedTile.DisplayName}");
                 EditorGUILayout.LabelField($"ID: {_selectedTile.TileId}");
             }

@@ -7,14 +7,14 @@ namespace WorldPainter.Editor.Tools.Painters
 {
     public abstract class BasePainter
     {
-        protected IWorldDataProvider WorldProvider;
+        protected IWorldFacade WorldProvider;
         protected PreviewManager PreviewManager;
         
         public abstract void HandleInput(SceneView sceneView);
         public abstract void DrawPreview();
         public abstract void Cleanup();
         
-        public virtual void SetWorldProvider(IWorldDataProvider provider) => 
+        public virtual void SetWorldProvider(IWorldFacade provider) => 
             WorldProvider = provider;
         public virtual void SetPreviewManager(PreviewManager manager) => 
             PreviewManager = manager;

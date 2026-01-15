@@ -29,7 +29,7 @@ namespace WorldPainter.Runtime.Data
                 neighborMask[i] = 0;
         }
         
-        public bool CheckRule(Vector2Int position, TileData currentTile, IWorldDataProvider provider)
+        public bool CheckRule(Vector2Int position, TileData currentTile, IWorldFacade provider)
         {
             if (provider == null)
                 return false;

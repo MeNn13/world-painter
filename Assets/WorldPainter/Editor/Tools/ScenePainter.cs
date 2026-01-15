@@ -19,7 +19,7 @@ namespace WorldPainter.Editor.Tools
         private readonly WallPainter _wallPainter;
         private readonly MultiTilePainter _multiTilePainter;
         
-        private IWorldDataProvider _worldProvider;
+        private IWorldFacade _worldProvider;
         private bool _initialized;
         
         
@@ -88,6 +88,7 @@ namespace WorldPainter.Editor.Tools
         [Obsolete("Obsolete")]
         private void InitializeIfNeeded()
         {
+            //Ошибка, не могу иницилизировать чанк кэш
             if (_initialized) return;
     
             var worldManager = FindWorldManager();
@@ -96,7 +97,7 @@ namespace WorldPainter.Editor.Tools
                 _worldProvider = worldManager;
         
                 // Инициализируем для редактора
-                if (worldManager is IWorldDataProviderEditor editorProvider)
+                if (worldManager is IWorldFacadeEditor editorProvider)
                     editorProvider.InitializeForEditor();
         
                 _tilePainter.SetWorldProvider(_worldProvider);
@@ -107,10 +108,10 @@ namespace WorldPainter.Editor.Tools
         }
         
         [Obsolete("Obsolete")]
-        private IWorldDataProvider FindWorldManager()
+        private IWorldFacade FindWorldManager()
         {
             // Используем не устаревший метод
-            var providers = UnityEngine.Object.FindObjectsOfType<WorldManager>();
+            var providers = UnityEngine.Object.FindObjectsOfType<WorldFacade>();
             return providers.Length > 0 ? providers[0] : null;
         }
         
@@ -139,7 +140,7 @@ namespace WorldPainter.Editor.Tools
             }
             else if (_toolbarGUI.SelectedTile is not null)
             {
-                // Tile
+                // TileView
                 _tilePainter.SelectedTile = _toolbarGUI.SelectedTile;
                 _tilePainter.Mode = _toolbarGUI.CurrentPaintMode;
         

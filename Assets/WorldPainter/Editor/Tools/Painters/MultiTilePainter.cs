@@ -45,7 +45,7 @@ namespace WorldPainter.Editor.Tools.Painters
             {
                 case PaintMode.Paint:
                     bool canPlace = WorldProvider.CanPlaceMultiTile(_selectedMultiTile, gridPos);
-                    if (canPlace && WorldProvider.PlaceMultiTile(_selectedMultiTile, gridPos))
+                    if (canPlace && WorldProvider.SetMultiTile(_selectedMultiTile, gridPos))
                         Debug.Log($"Placed {_selectedMultiTile.DisplayName} at {gridPos}");
                     else if (!canPlace)
                         Debug.LogWarning($"Cannot place {_selectedMultiTile.DisplayName} at {gridPos}");
