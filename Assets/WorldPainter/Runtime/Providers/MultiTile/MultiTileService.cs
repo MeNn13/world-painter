@@ -10,7 +10,7 @@ using WorldPainter.Runtime.Utils;
 
 namespace WorldPainter.Runtime.Providers.MultiTile
 {
-    public class MultiTileService : IMultiTileService, IRequiresDependencies
+    public class MultiTileService : IMultiTileService, IInitializable
     {
         private readonly Dictionary<Vector2Int, Core.MultiTile> _multiTiles = new();
         private readonly Dictionary<Vector2Int, Vector2Int> _positionToRoot = new();
@@ -20,26 +20,27 @@ namespace WorldPainter.Runtime.Providers.MultiTile
         private ChunkService _chunkService;
         private TilePool _tilePool;
 
-        private bool _dependenciesInjected;
+        public bool IsInitialized { get; private set; }
 
-        public void InjectDependencies(IDependencyContainer container)
+        public void Initialize(IDependencyContainer container)
         {
-            if (_dependenciesInjected) return;
-
-            _tileService = container?.TileService;
-            _wallService = container?.WallService;
-            _tilePool = container?.TilePool;
-            _chunkService = container?.ChunkService;
-
-            _dependenciesInjected = true;
+            if (IsInitialized) return;
+        
+            _tileService = container.TileService;
+            _wallService = container.WallService;
+            _chunkService = container.ChunkService;
+            _tilePool = container.TilePool;
+        
+            IsInitialized = true;
         }
+        
         private void ValidateDependencies()
         {
-            if (!_dependenciesInjected)
+            if (!IsInitialized)
             {
                 Debug.LogError("Dependencies not injected for MultiTileService!");
                 throw new InvalidOperationException(
-                    "MultiTileService requires dependencies to be injected via IRequiresDependencies");
+                    "MultiTileService requires dependencies to be injected via IInitializable");
             }
         }
 

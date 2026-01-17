@@ -2,22 +2,24 @@
 using System.Linq;
 using UnityEngine;
 using WorldPainter.Runtime.Providers;
+using WorldPainter.Runtime.Providers.Dependencies;
 using WorldPainter.Runtime.ScriptableObjects;
 
 namespace WorldPainter.Runtime.Core
 {
-    public class TilePool : MonoBehaviour
+    public class TilePool : MonoBehaviour, IInitializable
     {
         [SerializeField] private TileView tileViewPrefab;
         [SerializeField] private MultiTile multiTilePrefab;
         [SerializeField] private int initialPoolSize = 50;
-        
-        [SerializeField] private WorldFacade worldFacade;
 
         private readonly Queue<TileView> _pool = new();
         private readonly Queue<MultiTile> _multiTilePool = new();
         private Transform _poolContainer;
         private Transform _multiTilePoolContainer;
+        private IWorldFacade _worldFacade;
+        
+        public bool IsInitialized { get; private set; }
 
         private void Awake()
         {
@@ -30,6 +32,15 @@ namespace WorldPainter.Runtime.Core
             _multiTilePoolContainer.gameObject.SetActive(false);
 
             WarmPool();
+        }
+        
+        public void Initialize(IDependencyContainer container)
+        {
+            if (IsInitialized) return;
+
+            _worldFacade = container.WorldFacade;
+            
+            IsInitialized = true;
         }
 
         private void WarmPool()
@@ -72,7 +83,7 @@ namespace WorldPainter.Runtime.Core
                         if (go != null)
                         {
                             go.SetActive(true);
-                            tileView.Initialize(data, gridPosition, worldFacade);
+                            tileView.Initialize(data, gridPosition, _worldFacade);
                             return tileView;
                         }
                     }
@@ -86,7 +97,7 @@ namespace WorldPainter.Runtime.Core
 
             // Если в пуле нет живых тайлов - создаем новый
             tileView = CreateNewTile();
-            tileView.Initialize(data, gridPosition, worldFacade);
+            tileView.Initialize(data, gridPosition, _worldFacade);
             return tileView;
         }
 

@@ -1,19 +1,20 @@
 ﻿using UnityEngine;
 using WorldPainter.Runtime.Core;
+using WorldPainter.Runtime.Providers.Dependencies;
 using WorldPainter.Runtime.ScriptableObjects;
 using WorldPainter.Runtime.Utils;
 
 namespace WorldPainter.Runtime.Providers.Tile
 {
-    internal class TileService : ITileService
+    internal class TileService : ITileService, IInitializable
     {
-        private readonly ChunkService _chunkService;
-        private readonly IWorldFacade _worldFacade;
-
-        public TileService(IWorldFacade worldFacade, ChunkService chunkService)
+        private ChunkService _chunkService;
+        private IWorldFacade _worldFacade;
+        
+        public void Initialize(IDependencyContainer container)
         {
-            _worldFacade = worldFacade;
-            _chunkService = chunkService;
+            _chunkService = container.ChunkService;
+            _worldFacade = container.WorldFacade;
         }
 
         public void SetTileAt(Vector2Int worldPos, TileData tile)

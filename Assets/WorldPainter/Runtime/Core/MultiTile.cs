@@ -1,5 +1,4 @@
-﻿// 📁 WorldPainter/Runtime/Core/MultiTile.cs
-using UnityEngine;
+﻿using UnityEngine;
 using WorldPainter.Runtime.ScriptableObjects;
 
 namespace WorldPainter.Runtime.Core

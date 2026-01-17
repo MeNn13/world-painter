@@ -1,4 +1,5 @@
 ﻿using WorldPainter.Runtime.Core;
+using WorldPainter.Runtime.Providers.MultiTile;
 using WorldPainter.Runtime.Providers.Tile;
 using WorldPainter.Runtime.Providers.Wall;
 
@@ -8,6 +9,8 @@ namespace WorldPainter.Runtime.Providers.Dependencies
     {
         ITileService TileService { get; }
         IWallService WallService { get; }
+        IMultiTileService MultiTileService { get; }
+        IWorldFacade WorldFacade { get; }
         ChunkService ChunkService { get; }
         TilePool TilePool { get; }
     }

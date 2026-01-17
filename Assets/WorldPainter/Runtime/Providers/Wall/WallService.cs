@@ -1,18 +1,19 @@
 ﻿using UnityEngine;
+using WorldPainter.Runtime.Providers.Dependencies;
 using WorldPainter.Runtime.ScriptableObjects;
 using WorldPainter.Runtime.Utils;
 
 namespace WorldPainter.Runtime.Providers.Wall
 {
-    public class WallService : IWallService
+    public class WallService : IWallService, IInitializable
     {
-        private readonly ChunkService _chunkService;
-        private readonly IWorldFacade _worldFacade;
-
-        public WallService(IWorldFacade worldFacade, ChunkService chunkService)
+        private ChunkService _chunkService;
+        private IWorldFacade _worldFacade;
+        
+        public void Initialize(IDependencyContainer container)
         {
-            _worldFacade = worldFacade;
-            _chunkService = chunkService;
+            _chunkService = container.ChunkService;
+            _worldFacade = container.WorldFacade;
         }
         
         public void SetWallAt(Vector2Int worldPos, WallData wall)

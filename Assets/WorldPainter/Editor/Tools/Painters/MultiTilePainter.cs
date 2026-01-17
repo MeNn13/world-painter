@@ -44,10 +44,9 @@ namespace WorldPainter.Editor.Tools.Painters
             switch (Mode)
             {
                 case PaintMode.Paint:
-                    bool canPlace = WorldProvider.CanPlaceMultiTile(_selectedMultiTile, gridPos);
-                    if (canPlace && WorldProvider.SetMultiTile(_selectedMultiTile, gridPos))
+                    if (WorldProvider.TrySetMultiTile(_selectedMultiTile, gridPos))
                         Debug.Log($"Placed {_selectedMultiTile.DisplayName} at {gridPos}");
-                    else if (!canPlace)
+                    else
                         Debug.LogWarning($"Cannot place {_selectedMultiTile.DisplayName} at {gridPos}");
                     break;
                     
@@ -76,7 +75,7 @@ namespace WorldPainter.Editor.Tools.Painters
             if (_lastPreviewPosition != newPos)
             {
                 _lastPreviewPosition = newPos;
-                _lastPlacementValid = WorldProvider?.CanPlaceMultiTile(_selectedMultiTile, newPos) ?? false;
+                //_lastPlacementValid = WorldProvider?.CanPlaceMultiTile(_selectedMultiTile, newPos) ?? false;
             }
             
             Vector3 bottomLeftPosition = WorldGrid.GridToWorldPosition(newPos, false) - new Vector3(0.5f, 0.5f, 0);

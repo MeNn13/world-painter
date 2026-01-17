@@ -8,7 +8,7 @@ using WorldPainter.Runtime.ScriptableObjects;
 
 namespace WorldPainter.Runtime.Providers
 {
-    public class WorldFacade : MonoBehaviour, IWorldFacadeEditor, IDependencyContainer
+    public class WorldFacade : MonoBehaviour, IWorldFacadeEditor
     {
         [Header("Dependencies")]
         [SerializeField] private TilePool tilePool;
@@ -30,35 +30,34 @@ namespace WorldPainter.Runtime.Providers
             if (!Application.isPlaying) return;
             InitializeForEditor();
         }
-        
         public void InitializeForEditor()
         {
             if (IsInitialized) return;
-        
-            ValidateAndSetup();
-            InjectDependencies();
             
+            _tileService = new TileService();
+            _wallService = new WallService();
+            _multiTileService = new MultiTileService();
+            
+            var container = new DependencyContainer(
+                tileService: _tileService,
+                wallService: _wallService,
+                multiTileService: _multiTileService,
+                chunkService: chunkService,
+                tilePool: tilePool,
+                worldFacade: this
+                );
+            
+            InitializeAllComponents(container);
+        
             IsInitialized = true;
         }
-
-        private void ValidateAndSetup()
+        
+        private void InitializeAllComponents(IDependencyContainer container)
         {
-            tilePool ??= GetComponentInChildren<TilePool>(true);
-            
-            _tileService ??= new TileService(this, chunkService);
-            _wallService ??= new WallService(this, chunkService);
-            _multiTileService ??= new MultiTileService();
-            
-            Debug.Assert(_tileService is not null, "TileService is required!");
-            Debug.Assert(_wallService is not null, "WallService is required!");
-            Debug.Assert(_multiTileService is not null, "MultiTileService is required!");
-            Debug.Assert(tilePool is not null, "TilePool is required!");
-            Debug.Assert(chunkService is not null, "ChunkService is required!");
-        }
-        private void InjectDependencies()
-        {
-            IRequiresDependencies multiTile = _multiTileService;
-            multiTile?.InjectDependencies(this);
+            _tileService.Initialize(container);
+            _wallService.Initialize(container);
+            _multiTileService.Initialize(container);
+            tilePool.Initialize(container);
         }
         
         #region TileView
