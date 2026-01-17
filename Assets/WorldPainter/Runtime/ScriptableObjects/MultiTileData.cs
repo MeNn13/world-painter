@@ -14,12 +14,12 @@ namespace WorldPainter.Runtime.ScriptableObjects
         [Header("Placement Rules")] [Tooltip("К чему должен крепиться объект")]
         public AttachmentType attachmentType = AttachmentType.Ground;
 
-        [Tooltip("Направление стены (если attachmentType = Wall)")]
-        public WallDirection wallDirection = WallDirection.Back;
-        
         [Header("Wall Placement Settings")]
         [Tooltip("С какой стороны объекта требуется стена")]
         public WallAttachmentSide wallAttachmentSide = WallAttachmentSide.Back;
+        
+        [Header("Wall Placement Settings")]
+        public WallAttachmentTarget wallAttachmentTarget = WallAttachmentTarget.BackgroundWall;
 
         [Tooltip("Точка крепления относительно левого нижнего угла (в тайлах)")]
         public Vector2Int attachmentPoint = Vector2Int.zero;
@@ -78,21 +78,19 @@ namespace WorldPainter.Runtime.ScriptableObjects
         Wall, // Крепится к стене (направление будет в отдельном поле)
         GroundAndCeiling // Две точки крепления (двери)
     }
-
-    public enum WallDirection
+    
+    public enum WallAttachmentTarget
     {
-        Back, // Задняя стена
-        Left,
-        Right,
-        Front // Передняя стена
+        BackgroundWall,   // Только к фоновым стенам
+        SolidTile,        // Только к твердым блокам  
+        Any               // К чему угодно (стенам или блокам)
     }
     
     public enum WallAttachmentSide
     {
-        Back,      // Крепится к стене сзади объекта (стандартно)
-        Front,     // Крепится к стене спереди объекта
-        Left,      // Крепится к стене слева от объекта
-        Right,     // Крепится к стене справа от объекта
-        AnySide    // Может крепиться к любой стороне
+        Back,      // ТОЛЬКО к задней стене (как картины)
+        Left,      // ТОЛЬКО к левой стене (специальные случаи)
+        Right,     // ТОЛЬКО к правой стене (специальные случаи)
+        AnySide    // К любой стороне (как факелы)
     }
 }

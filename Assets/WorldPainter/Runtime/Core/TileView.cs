@@ -25,6 +25,7 @@ namespace WorldPainter.Runtime.Core
                 Sprite sprite = data.GetSpriteForNeighbors(gridPosition, worldProvider);
                 spriteRenderer.sprite = sprite;
                 spriteRenderer.color = data.TintColor;
+                spriteRenderer.sortingOrder = data is WallData ? -1 : 1;
             }
 
             transform.position = new Vector3(gridPosition.x, gridPosition.y, 0);

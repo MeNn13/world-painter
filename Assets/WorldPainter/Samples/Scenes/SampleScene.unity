@@ -130,8 +130,6 @@ GameObject:
   - component: {fileID: 96432503}
   - component: {fileID: 96432502}
   - component: {fileID: 96432501}
-  - component: {fileID: 96432506}
-  - component: {fileID: 96432505}
   - component: {fileID: 96432504}
   m_Layer: 0
   m_Name: Setup
@@ -152,7 +150,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0fb2771d3660429da354ad8b302ae309, type: 3}
   m_Name: 
   m_EditorClassIdentifier: WorldPainter.Runtime::WorldPainter.Runtime.Core.TilePool
-  tilePrefab: {fileID: 7439052200311173228, guid: fa04e1821d5431d498a594858e0ff518, type: 3}
+  tileViewPrefab: {fileID: 7439052200311173228, guid: fa04e1821d5431d498a594858e0ff518, type: 3}
   multiTilePrefab: {fileID: 7101488471478824513, guid: 05d955ab499ba3e479b952b392626f0b, type: 3}
   initialPoolSize: 50
 --- !u!114 &96432502
@@ -167,10 +165,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4059dada75904568a15a8f43b1c319f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: WorldPainter.Runtime::WorldPainter.Runtime.Providers.SimpleWorldData
-  tileDataProvider: {fileID: 96432506}
-  wallDataProvider: {fileID: 96432505}
-  multiTileDataProvider: {fileID: 96432504}
   tilePool: {fileID: 96432501}
+  chunkService: {fileID: 96432504}
 --- !u!4 &96432503
 Transform:
   m_ObjectHideFlags: 0
@@ -195,33 +191,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 96432500}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 719092d140d74b20984789f7ba2d7878, type: 3}
+  m_Script: {fileID: 11500000, guid: 4db96af5cacf4182a1040e8a01167ae3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: WorldPainter.Runtime::WorldPainter.Runtime.Providers.MultiTile.MultiTileDataProvider
---- !u!114 &96432505
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 96432500}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c35c42fcf2d04ee8b5c70fe57cf3ab85, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: WorldPainter.Runtime::WorldPainter.Runtime.Providers.Wall.WallDataProvider
---- !u!114 &96432506
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 96432500}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9c5c5bad46dc4f5f9c6a19153f474550, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: WorldPainter.Runtime::WorldPainter.Runtime.Providers.Tile.TileDataProvider
+  m_EditorClassIdentifier: WorldPainter.Runtime::WorldPainter.Runtime.Providers.ChunkService
+  tilePool: {fileID: 96432501}
 --- !u!1 &1186535523
 GameObject:
   m_ObjectHideFlags: 0

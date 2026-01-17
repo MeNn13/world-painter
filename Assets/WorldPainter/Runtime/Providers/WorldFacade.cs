@@ -10,17 +10,14 @@ namespace WorldPainter.Runtime.Providers
 {
     public class WorldFacade : MonoBehaviour, IWorldFacadeEditor
     {
-        [Header("Dependencies")]
+        [Header("Dependencies")] 
         [SerializeField] private TilePool tilePool;
         [SerializeField] private ChunkService chunkService;
 
-        public bool IsInitialized { get; private set; }
-        public ITileService TileService => _tileService;
-        public IWallService WallService => _wallService;
-        public ChunkService ChunkService => chunkService;
-        public IMultiTileService MultiTileProvider => _multiTileService;
-        public TilePool TilePool => tilePool;
-        
+        public bool IsInitialized => _multiTileService is not null
+                                     && _tileService is not null
+                                     && _wallService is not null;
+
         private TileService _tileService;
         private WallService _wallService;
         private MultiTileService _multiTileService;
@@ -32,12 +29,12 @@ namespace WorldPainter.Runtime.Providers
         }
         public void InitializeForEditor()
         {
-            if (IsInitialized) return;
+            if(IsInitialized) return;
             
             _tileService = new TileService();
             _wallService = new WallService();
             _multiTileService = new MultiTileService();
-            
+
             var container = new DependencyContainer(
                 tileService: _tileService,
                 wallService: _wallService,
@@ -46,12 +43,10 @@ namespace WorldPainter.Runtime.Providers
                 tilePool: tilePool,
                 worldFacade: this
                 );
-            
+
             InitializeAllComponents(container);
-        
-            IsInitialized = true;
         }
-        
+
         private void InitializeAllComponents(IDependencyContainer container)
         {
             _tileService.Initialize(container);
@@ -59,15 +54,14 @@ namespace WorldPainter.Runtime.Providers
             _multiTileService.Initialize(container);
             tilePool.Initialize(container);
         }
-        
+
         #region TileView
-        
+
         public void SetTileAt(Vector2Int worldPos, TileData tile) =>
             _tileService?.SetTileAt(worldPos, tile);
-        
+
         public TileData GetTileAt(Vector2Int worldPos) =>
             _tileService?.GetTileAt(worldPos);
-        
 
         #endregion
 

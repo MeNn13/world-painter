@@ -13,8 +13,8 @@ namespace WorldPainter.Runtime.Core
         [SerializeField] private MultiTile multiTilePrefab;
         [SerializeField] private int initialPoolSize = 50;
 
-        private readonly Queue<TileView> _pool = new();
         private readonly Queue<MultiTile> _multiTilePool = new();
+        private  Queue<TileView> _pool = new();
         private Transform _poolContainer;
         private Transform _multiTilePoolContainer;
         private IWorldFacade _worldFacade;
@@ -69,13 +69,15 @@ namespace WorldPainter.Runtime.Core
 
         public TileView GetTile(TileData data, Vector2Int gridPosition)
         {
+            CleanPool();
+            
             TileView tileView;
             
             while (_pool.Count > 0)
             {
                 tileView = _pool.Dequeue();
                 
-                if (tileView is not null)
+                if (tileView != null)
                 {
                     try
                     {
@@ -172,6 +174,17 @@ namespace WorldPainter.Runtime.Core
             multiTile.gameObject.SetActive(setActive);
             return multiTile;
         }
-
+        
+        private void CleanPool()
+        {
+            var aliveTiles = new Queue<TileView>();
+            while (_pool.Count > 0)
+            {
+                var tile = _pool.Dequeue();
+                if (tile != null) 
+                    aliveTiles.Enqueue(tile);
+            }
+            _pool = aliveTiles;
+        }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using WorldPainter.Editor.Tools.Painters;
@@ -12,17 +12,15 @@ namespace WorldPainter.Editor.Tools
     {
         private static ScenePainter _instance;
         public static ScenePainter Instance => _instance ??= new ScenePainter();
-        
+
         private readonly ToolbarGUI _toolbarGUI;
         private readonly PreviewManager _previewManager;
         private readonly TilePainter _tilePainter;
         private readonly WallPainter _wallPainter;
         private readonly MultiTilePainter _multiTilePainter;
-        
-        private IWorldFacade _worldProvider;
-        private bool _initialized;
-        
-        
+
+        private IWorldFacade _worldFacade;
+
         static ScenePainter()
         {
             // Подписка на события
@@ -31,90 +29,79 @@ namespace WorldPainter.Editor.Tools
             AssemblyReloadEvents.beforeAssemblyReload += Instance.OnBeforeAssemblyReload;
             AssemblyReloadEvents.afterAssemblyReload += Instance.OnAfterAssemblyReload;
         }
-        
+
         private ScenePainter()
         {
             _toolbarGUI = new ToolbarGUI();
             _previewManager = new PreviewManager();
-            
+
             // Создаем пейнтеры
             _tilePainter = new TilePainter();
             _wallPainter = new WallPainter();
             _multiTilePainter = new MultiTilePainter();
-            
+
             // Связываем с менеджером превью
             _tilePainter.SetPreviewManager(_previewManager);
             _wallPainter.SetPreviewManager(_previewManager);
             _multiTilePainter.SetPreviewManager(_previewManager);
         }
-        
+
         private void OnSceneGUI(SceneView sceneView)
         {
             InitializeIfNeeded();
-            
-            // Рисуем интерфейс
+
             _toolbarGUI.DrawToolbar();
-            
+
             if (!_toolbarGUI.IsPainting)
             {
                 CleanupAllPreviews();
                 return;
             }
-            
-            // Обновляем пейнтеры
+
             UpdatePainters();
-            
-            // Обрабатываем ввод
+
             HandleInput(sceneView);
-            
+
             Event e = Event.current;
-            
+
             if (e.control && e.type is EventType.MouseDown or EventType.MouseDrag)
             {
                 HandleInput(sceneView);
             }
-            
+
             if (e.type == EventType.Repaint)
             {
                 DrawPreviews();
             }
-            
+
             if (e.type == EventType.MouseMove)
             {
                 sceneView.Repaint();
             }
         }
-        
-        [Obsolete("Obsolete")]
+
         private void InitializeIfNeeded()
         {
-            //Ошибка, не могу иницилизировать чанк кэш
-            if (_initialized) return;
-    
-            var worldManager = FindWorldManager();
-            if (worldManager != null)
+            if (_worldFacade is null)
             {
-                _worldProvider = worldManager;
-        
-                // Инициализируем для редактора
-                if (worldManager is IWorldFacadeEditor editorProvider)
-                    editorProvider.InitializeForEditor();
-        
-                _tilePainter.SetWorldProvider(_worldProvider);
-                _wallPainter.SetWorldProvider(_worldProvider);
-                _multiTilePainter.SetWorldProvider(_worldProvider);
-                _initialized = true;
+                IWorldFacade worldFacade = FindWorldManager();
+                _worldFacade = worldFacade;
+                
+                _tilePainter.SetWorldProvider(_worldFacade);
+                _wallPainter.SetWorldProvider(_worldFacade);
+                _multiTilePainter.SetWorldProvider(_worldFacade);
             }
+
+            if (_worldFacade is IWorldFacadeEditor { IsInitialized: false } editorProvider)
+                editorProvider.InitializeForEditor();
         }
-        
-        [Obsolete("Obsolete")]
+
         private IWorldFacade FindWorldManager()
         {
-            // Используем не устаревший метод
-            var providers = UnityEngine.Object.FindObjectsOfType<WorldFacade>();
-            return providers.Length > 0 ? providers[0] : null;
+            var worldFacades = Resources.FindObjectsOfTypeAll<WorldFacade>();
+            return worldFacades.FirstOrDefault(facade => facade is not null && facade.gameObject.scene.IsValid());
         }
-        
+
         private void UpdatePainters()
         {
             // Определяем активный инструмент по типу выбранного объекта
@@ -123,7 +110,7 @@ namespace WorldPainter.Editor.Tools
                 // MultiTile
                 _multiTilePainter.SelectedMultiTile = _toolbarGUI.SelectedMultiTile;
                 _multiTilePainter.Mode = _toolbarGUI.CurrentPaintMode;
-        
+
                 // Очищаем другие пейнтеры
                 _tilePainter.Cleanup();
                 _wallPainter.Cleanup();
@@ -133,7 +120,7 @@ namespace WorldPainter.Editor.Tools
                 // Wall
                 _wallPainter.SelectedWall = _toolbarGUI.SelectedWall;
                 _wallPainter.Mode = _toolbarGUI.CurrentPaintMode;
-        
+
                 // Очищаем другие пейнтеры
                 _tilePainter.Cleanup();
                 _multiTilePainter.Cleanup();
@@ -143,7 +130,7 @@ namespace WorldPainter.Editor.Tools
                 // TileView
                 _tilePainter.SelectedTile = _toolbarGUI.SelectedTile;
                 _tilePainter.Mode = _toolbarGUI.CurrentPaintMode;
-        
+
                 // Очищаем другие пейнтеры
                 _wallPainter.Cleanup();
                 _multiTilePainter.Cleanup();
@@ -156,23 +143,24 @@ namespace WorldPainter.Editor.Tools
                 _multiTilePainter.Cleanup();
             }
         }
-        
+
         private void HandleInput(SceneView sceneView)
         {
-            if (_toolbarGUI.SelectedMultiTile != null)
+            if (_toolbarGUI.SelectedMultiTile is not null)
             {
                 _multiTilePainter.HandleInput(sceneView);
             }
-            else if (_toolbarGUI.SelectedWall != null)
+
+            if (_toolbarGUI.SelectedWall is not null)
             {
                 _wallPainter.HandleInput(sceneView);
             }
-            else if (_toolbarGUI.SelectedTile != null)
+            if (_toolbarGUI.SelectedTile is not null)
             {
                 _tilePainter.HandleInput(sceneView);
             }
         }
-        
+
         private void DrawPreviews()
         {
             // Определяем какой превью рисовать по типу выбранного объекта
@@ -189,7 +177,7 @@ namespace WorldPainter.Editor.Tools
                 _tilePainter.DrawPreview();
             }
         }
-        
+
         // Методы для очистки
         public void CleanupAllPreviews()
         {
@@ -198,29 +186,26 @@ namespace WorldPainter.Editor.Tools
             _wallPainter.Cleanup();
             _multiTilePainter.Cleanup();
         }
-        
+
         // Обработчики событий
         private void OnPlayModeStateChanged(PlayModeStateChange state)
         {
-            if (state == PlayModeStateChange.ExitingEditMode || 
-                state == PlayModeStateChange.ExitingPlayMode)
+            if (state == PlayModeStateChange.ExitingEditMode || state == PlayModeStateChange.ExitingPlayMode)
             {
                 CleanupAllPreviews();
             }
         }
-        
+
         private void OnBeforeAssemblyReload()
         {
             CleanupAllPreviews();
         }
-        
+
         private void OnAfterAssemblyReload()
         {
             CleanupAllPreviews();
-            _initialized = false; // Принудительная переинициализация
         }
-        
-        // Перечисление PaintMode должно быть доступно извне
+
         public enum PaintMode
         {
             Paint,

@@ -36,7 +36,7 @@ namespace WorldPainter.Editor.Tools.Painters
             Vector3 worldPoint = GetMouseWorldPosition();
             Vector2Int gridPos = CalculateGridPosition(worldPoint);
             
-            if (WorldProvider == null)
+            if (WorldFacade == null)
                 return;
                 
             switch (Mode)
@@ -44,14 +44,14 @@ namespace WorldPainter.Editor.Tools.Painters
                 case PaintMode.Paint:
                     if (_selectedTile is not null)
                     {
-                        WorldProvider.SetTileAt(gridPos, _selectedTile);
+                        WorldFacade.SetTileAt(gridPos, _selectedTile);
                         Debug.Log($"Painted {_selectedTile.DisplayName} at {gridPos}");
                         e.Use();
                     }
                     break;
                     
                 case PaintMode.Erase:
-                    WorldProvider.SetTileAt(gridPos, null);
+                    WorldFacade.SetTileAt(gridPos, null);
                     Debug.Log($"Erased tile at {gridPos}");
                     e.Use();
                     break;

@@ -8,6 +8,7 @@ namespace WorldPainter.Runtime.Core
     public class ChunkView : MonoBehaviour
     {
         private readonly TileView[,] _tiles = new TileView[ChunkData.SIZE, ChunkData.SIZE];
+        private readonly TileView[,] _walls = new TileView[ChunkData.SIZE, ChunkData.SIZE];
 
         private IWorldFacade _worldProvider;
         private TilePool _tilePool;
@@ -37,7 +38,10 @@ namespace WorldPainter.Runtime.Core
         {
             if (tileData is MultiTileData) return;
             
-            RemoveTile(localPos);
+            bool isWall = tileData is WallData;
+            var targetArray = isWall ? _walls : _tiles;
+            
+            RemoveFromArray(targetArray, localPos);
             CreateNewTile();
 
             return;
@@ -49,16 +53,20 @@ namespace WorldPainter.Runtime.Core
                     TileView tileView = _tilePool?.GetTile(tileData, LocalToWorldPosition(localPos));
                     tileView?.Initialize(tileData, LocalToWorldPosition(localPos), _worldProvider);
                     tileView?.transform.SetParent(transform);
-                    _tiles[localPos.x, localPos.y] = tileView;
+                    
+                    if (isWall)
+                        _walls[localPos.x, localPos.y] = tileView;
+                    else
+                        _tiles[localPos.x, localPos.y] = tileView;
                 }
             }
         }
-        public void RemoveTile(Vector2Int localPos)
+        private void RemoveFromArray(TileView[,] array, Vector2Int localPos)
         {
-            if (_tiles[localPos.x, localPos.y] is not null)
+            if (array[localPos.x, localPos.y] is not null)
             {
-                _tilePool?.ReturnTile(_tiles[localPos.x, localPos.y]);
-                _tiles[localPos.x, localPos.y] = null;
+                _tilePool?.ReturnTile(array[localPos.x, localPos.y]);
+                array[localPos.x, localPos.y] = null;
             }
         }
 

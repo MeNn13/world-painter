@@ -40,5 +40,14 @@ namespace WorldPainter.Runtime.Data
         public bool HasMultiTileReferences => MultiTileRoots.Count > 0;
         
         public bool IsEmpty(Vector2Int localPos) => Tiles[localPos.x, localPos.y] is null;
+        public bool IsChunkEmpty()
+        {
+            for (int x = 0; x < SIZE; x++)
+                for (int y = 0; y < SIZE; y++)
+                    if (Tiles[x, y] is not null || Walls[x, y] is not null)
+                        return false;
+            
+            return true;
+        }
     }
 }

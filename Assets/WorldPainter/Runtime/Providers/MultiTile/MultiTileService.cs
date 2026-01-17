@@ -20,34 +20,16 @@ namespace WorldPainter.Runtime.Providers.MultiTile
         private ChunkService _chunkService;
         private TilePool _tilePool;
 
-        public bool IsInitialized { get; private set; }
-
         public void Initialize(IDependencyContainer container)
         {
-            if (IsInitialized) return;
-        
             _tileService = container.TileService;
             _wallService = container.WallService;
             _chunkService = container.ChunkService;
             _tilePool = container.TilePool;
-        
-            IsInitialized = true;
-        }
-        
-        private void ValidateDependencies()
-        {
-            if (!IsInitialized)
-            {
-                Debug.LogError("Dependencies not injected for MultiTileService!");
-                throw new InvalidOperationException(
-                    "MultiTileService requires dependencies to be injected via IInitializable");
-            }
         }
 
         public bool TrySetMultiTile(MultiTileData data, Vector2Int rootPosition)
         {
-            ValidateDependencies();
-            
             if (data is null) return false;
 
             if (!CanPlaceMultiTile(data, rootPosition))
@@ -76,8 +58,6 @@ namespace WorldPainter.Runtime.Providers.MultiTile
         }
         public bool RemoveMultiTileAt(Vector2Int position)
         {
-            ValidateDependencies();
-
             if (!_positionToRoot.TryGetValue(position, out Vector2Int rootPosition))
                 return false;
 
@@ -110,8 +90,6 @@ namespace WorldPainter.Runtime.Providers.MultiTile
 
         private bool CanPlaceMultiTile(MultiTileData data, Vector2Int rootPosition)
         {
-            ValidateDependencies();
-
             if (data is null) return false;
 
             var occupiedPositions = data.GetAllOccupiedPositions(rootPosition);
@@ -159,29 +137,99 @@ namespace WorldPainter.Runtime.Providers.MultiTile
         }
         private bool CheckWallAttachment(MultiTileData data, Vector2Int rootPosition)
         {
-            // TODO: Полная реализация проверки стен
-            // Пока базовая проверка для WallAttachmentSide.Back
-            if (data.wallAttachmentSide == WallAttachmentSide.Back)
+            var foundSide = FindAvailableWallSide(data, rootPosition);
+
+            if (!foundSide.HasValue)
             {
-                for (int y = 0; y < data.size.y; y++)
-                {
-                    Vector2Int wallPos = rootPosition + new Vector2Int(-1, y);
-                    if (_wallService?.GetWallAt(wallPos) is null)
-                    {
-                        Debug.Log($"No wall at {wallPos} for MultiTile");
-                        return false;
-                    }
-                }
-                return true;
+                Debug.Log($"No suitable wall found for MultiTile at {rootPosition}");
+                return false;
             }
 
-            Debug.LogWarning($"Wall attachment side {data.wallAttachmentSide} not fully implemented");
-            return true; // Временно разрешаем
+            if (data.wallAttachmentSide != WallAttachmentSide.AnySide && data.wallAttachmentSide != foundSide.Value)
+            {
+                Debug.Log($"Wall attachment side mismatch. Required: {data.wallAttachmentSide}, Found: {foundSide.Value}");
+                return false;
+            }
+
+            return true;
+        }
+
+        private WallAttachmentSide? FindAvailableWallSide(MultiTileData data, Vector2Int rootPosition)
+        {
+            var possibleSides = new List<WallAttachmentSide>();
+
+            if (CheckWallAtPositions(data, rootPosition, Vector2Int.zero))
+                possibleSides.Add(WallAttachmentSide.Back);
+
+            if (CheckWallAtPositions(data, rootPosition, new Vector2Int(-1, 0)))
+                possibleSides.Add(WallAttachmentSide.Left);
+
+            if (CheckWallAtPositions(data, rootPosition, new Vector2Int(data.size.x, 0)))
+                possibleSides.Add(WallAttachmentSide.Right);
+
+            if (possibleSides.Contains(WallAttachmentSide.Back))
+                return WallAttachmentSide.Back;
+            if (possibleSides.Contains(WallAttachmentSide.Left))
+                return WallAttachmentSide.Left;
+            if (possibleSides.Contains(WallAttachmentSide.Right))
+                return WallAttachmentSide.Right;
+
+            return null;
+        }
+
+        private bool CheckWallAtPositions(MultiTileData data, Vector2Int rootPosition, Vector2Int offset)
+        {
+            int checkHeight = offset == Vector2Int.zero ? data.size.y : 1;
+
+            for (int x = 0; x < data.size.x; x++)
+            {
+                for (int y = 0; y < checkHeight; y++)
+                {
+                    Vector2Int checkPos = rootPosition + new Vector2Int(x, y) + offset;
+
+                    switch (data.wallAttachmentTarget)
+                    {
+                        case WallAttachmentTarget.BackgroundWall:
+                            if (_wallService?.GetWallAt(checkPos) is null)
+                            {
+                                Debug.Log($"No wall at {checkPos} (side: {GetSideFromOffset()})");
+                                return false;
+                            }
+                            break;
+
+                        case WallAttachmentTarget.SolidTile:
+                            if (_tileService?.GetTileAt(checkPos) is null)
+                            {
+                                Debug.Log($"No tile at {checkPos} (side: {GetSideFromOffset()})");
+                                return false;
+                            }
+                            break;
+
+                        case WallAttachmentTarget.Any:
+                            if (_wallService?.GetWallAt(checkPos) is null && _tileService?.GetTileAt(checkPos) is null)
+                            {
+                                Debug.Log($"No wall or tile at {checkPos} (side: {GetSideFromOffset()})");
+                                return false;
+                            }
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+                }
+            }
+            return true;
+
+            string GetSideFromOffset()
+            {
+                if (offset == Vector2Int.zero) return "Back";
+                if (offset == new Vector2Int(-1, 0)) return "Left";
+                return offset.x > 0 ? "Right" : "Unknown";
+            }
         }
         private void AddMultiTileReferenceToChunks(Vector2Int worldPos, Vector2Int rootPosition)
         {
             if (_chunkService is null) return;
-            
+
             Vector2Int chunkCoord = WorldGrid.WorldToChunkCoord(worldPos);
             var chunkData = _chunkService.GetChunkData(chunkCoord);
             chunkData?.AddMultiTileReference(rootPosition);
@@ -189,7 +237,7 @@ namespace WorldPainter.Runtime.Providers.MultiTile
         private void RemoveMultiTileReferenceFromChunks(Vector2Int worldPos, Vector2Int rootPosition)
         {
             if (_chunkService is null) return;
-            
+
             Vector2Int chunkCoord = WorldGrid.WorldToChunkCoord(worldPos);
             var chunkData = _chunkService.GetChunkData(chunkCoord);
             chunkData?.RemoveMultiTileReference(rootPosition);

@@ -38,20 +38,20 @@ namespace WorldPainter.Editor.Tools.Painters
             Vector3 worldPoint = GetMouseWorldPosition();
             Vector2Int gridPos = CalculateGridPosition(worldPoint, false);
             
-            if (WorldProvider is null || _selectedMultiTile is null)
+            if (WorldFacade is null || _selectedMultiTile is null)
                 return;
                 
             switch (Mode)
             {
                 case PaintMode.Paint:
-                    if (WorldProvider.TrySetMultiTile(_selectedMultiTile, gridPos))
+                    if (WorldFacade.TrySetMultiTile(_selectedMultiTile, gridPos))
                         Debug.Log($"Placed {_selectedMultiTile.DisplayName} at {gridPos}");
                     else
                         Debug.LogWarning($"Cannot place {_selectedMultiTile.DisplayName} at {gridPos}");
                     break;
                     
                 case PaintMode.Erase:
-                    if (WorldProvider.RemoveMultiTileAt(gridPos))
+                    if (WorldFacade.RemoveMultiTileAt(gridPos))
                         Debug.Log($"Removed multi tile at {gridPos}");
                     break;
                 default:
@@ -75,7 +75,7 @@ namespace WorldPainter.Editor.Tools.Painters
             if (_lastPreviewPosition != newPos)
             {
                 _lastPreviewPosition = newPos;
-                //_lastPlacementValid = WorldProvider?.CanPlaceMultiTile(_selectedMultiTile, newPos) ?? false;
+                //_lastPlacementValid = WorldFacade?.CanPlaceMultiTile(_selectedMultiTile, newPos) ?? false;
             }
             
             Vector3 bottomLeftPosition = WorldGrid.GridToWorldPosition(newPos, false) - new Vector3(0.5f, 0.5f, 0);

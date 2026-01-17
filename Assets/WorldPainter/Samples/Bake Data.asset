@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b2a2cc2a49e38d84ba8d7f7701c4ee46, type: 3}
-  m_Name: MultiTile Data
+  m_Name: Bake Data
   m_EditorClassIdentifier: WorldPainter.Runtime::WorldPainter.Runtime.ScriptableObjects.MultiTileData
   displayName: "\u041F\u0435\u0447\u044C"
   tintColor: {r: 1, g: 1, b: 1, a: 1}
@@ -18,8 +18,9 @@ MonoBehaviour:
   defaultSprite: {fileID: 21300000, guid: f1823328e88031d46a04597cffec0ca4, type: 3}
   size: {x: 2, y: 2}
   pivotOffset: {x: 1, y: 1}
-  attachmentType: 1
-  wallDirection: 0
+  attachmentType: 3
+  wallAttachmentSide: 3
+  wallAttachmentTarget: 0
   attachmentPoint: {x: 0, y: 0}
   secondaryAttachmentPoint: {x: 0, y: 0}
   isSolid: 0

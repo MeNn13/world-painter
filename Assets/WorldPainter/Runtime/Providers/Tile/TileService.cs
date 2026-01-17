@@ -50,8 +50,10 @@ namespace WorldPainter.Runtime.Providers.Tile
         {
             var (chunkCoord, localPos) = WorldGrid.GetChunkCoordsAndLocalPos(worldPos);
 
-            if (_chunkService.TryGetTileView(chunkCoord, localPos, out TileView tileView))
-                tileView?.UpdateSprite();
+            if (_chunkService.TryGetTileView(chunkCoord, localPos, out TileView tileView) && tileView != null)
+            {
+                tileView.UpdateSprite();
+            }
         }
     }
 }
