@@ -6,8 +6,9 @@ namespace WorldPainter.Runtime.Providers.Dependencies
 {
     public interface IDependencyContainer
     {
-        ITileService TileProvider { get; }
-        IWallService WallProvider { get; }
+        ITileService TileService { get; }
+        IWallService WallService { get; }
+        ChunkService ChunkService { get; }
         TilePool TilePool { get; }
     }
 }

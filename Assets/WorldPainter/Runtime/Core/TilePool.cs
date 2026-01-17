@@ -130,10 +130,7 @@ namespace WorldPainter.Runtime.Core
             multiTile.Initialize(data, rootPosition);
             return multiTile;
         }
-
-        /// <summary>
-        /// Возвращает мультитайл в пул
-        /// </summary>
+        
         public void ReturnMultiTile(MultiTile multiTile)
         {
             if (multiTile == null) return;
@@ -151,10 +148,7 @@ namespace WorldPainter.Runtime.Core
             multiTile.transform.SetParent(_multiTilePoolContainer);
             _multiTilePool.Enqueue(multiTile);
         }
-
-        /// <summary>
-        /// Создаёт новый мультитайл
-        /// </summary>
+        
         private MultiTile CreateNewMultiTile(bool setActive = true)
         {
             if (multiTilePrefab == null)

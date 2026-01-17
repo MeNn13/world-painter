@@ -4,5 +4,5 @@ using WorldPainter.Runtime.Providers.Wall;
 
 namespace WorldPainter.Runtime.Providers
 {
-    public interface IWorldFacade : ITileService, IWallService, IMultiTileDataProvider { }
+    public interface IWorldFacade : ITileService, IWallService, IMultiTileService { }
 }

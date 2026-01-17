@@ -15,14 +15,15 @@ namespace WorldPainter.Runtime.Providers
         [SerializeField] private ChunkService chunkService;
 
         public bool IsInitialized { get; private set; }
-        public ITileService TileProvider => _tileService;
-        public IWallService WallProvider => _wallService;
-        public IMultiTileDataProvider MultiTileProvider => _multiTileDataProvider;
+        public ITileService TileService => _tileService;
+        public IWallService WallService => _wallService;
+        public ChunkService ChunkService => chunkService;
+        public IMultiTileService MultiTileProvider => _multiTileService;
         public TilePool TilePool => tilePool;
         
         private TileService _tileService;
         private WallService _wallService;
-        private MultiTileDataProvider _multiTileDataProvider;
+        private MultiTileService _multiTileService;
 
         private void Awake()
         {
@@ -42,23 +43,21 @@ namespace WorldPainter.Runtime.Providers
 
         private void ValidateAndSetup()
         {
-            _tileService ??= GetComponent<TileService>();
-            _wallService ??= GetComponent<WallService>();
-            _multiTileDataProvider ??= GetComponent<MultiTileDataProvider>();
             tilePool ??= GetComponentInChildren<TilePool>(true);
             
             _tileService ??= new TileService(this, chunkService);
             _wallService ??= new WallService(this, chunkService);
-            _multiTileDataProvider ??= new MultiTileDataProvider(this);
+            _multiTileService ??= new MultiTileService();
             
             Debug.Assert(_tileService is not null, "TileService is required!");
             Debug.Assert(_wallService is not null, "WallService is required!");
-            Debug.Assert(_multiTileDataProvider is not null, "MultiTileDataProvider is required!");
+            Debug.Assert(_multiTileService is not null, "MultiTileService is required!");
             Debug.Assert(tilePool is not null, "TilePool is required!");
+            Debug.Assert(chunkService is not null, "ChunkService is required!");
         }
         private void InjectDependencies()
         {
-            IRequiresDependencies multiTile = _multiTileDataProvider;
+            IRequiresDependencies multiTile = _multiTileService;
             multiTile?.InjectDependencies(this);
         }
         
@@ -95,13 +94,13 @@ namespace WorldPainter.Runtime.Providers
         #region MultiTile
 
         public bool TrySetMultiTile(MultiTileData data, Vector2Int rootPosition) =>
-            _multiTileDataProvider?.SetMultiTile(data, rootPosition) ?? false;
+            _multiTileService?.TrySetMultiTile(data, rootPosition) ?? false;
 
-        public bool RemoveMultiTileAt(Vector2Int anyPosition) =>
-            _multiTileDataProvider?.RemoveMultiTileAt(anyPosition) ?? false;
+        public bool RemoveMultiTileAt(Vector2Int position) =>
+            _multiTileService?.RemoveMultiTileAt(position) ?? false;
 
         public Core.MultiTile GetMultiTileAt(Vector2Int position) =>
-            _multiTileDataProvider?.GetMultiTileAt(position);
+            _multiTileService?.GetMultiTileAt(position);
 
         #endregion
     }

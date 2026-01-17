@@ -58,6 +58,16 @@ namespace WorldPainter.Runtime.Providers
         
         
         #endregion
+
+        #region MultiTile
+
+        public ChunkData GetChunkData(Vector2Int chunkCoord)
+        {
+            return _chunksData.GetValueOrDefault(chunkCoord);
+        }
+        public bool HasChunkAt(Vector2Int chunkCoord) => _chunksData.ContainsKey(chunkCoord);
+        
+        #endregion
         
         #region Внутренние методы
         
@@ -88,7 +98,8 @@ namespace WorldPainter.Runtime.Providers
         
         private void TryRemoveEmptyChunk(Vector2Int coord)
         {
-            if (!_chunksData.TryGetValue(coord, out var data) || !data.IsEmpty(coord))
+            if (!_chunksData.TryGetValue(coord, out var data) || 
+                (!data.IsEmpty(coord) && !data.HasMultiTileReferences))
                 return;
             
             if (_chunksView.TryGetValue(coord, out var view))
