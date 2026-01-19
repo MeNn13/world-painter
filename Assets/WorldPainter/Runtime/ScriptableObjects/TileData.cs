@@ -7,7 +7,7 @@ using WorldPainter.Runtime.Providers;
 
 namespace WorldPainter.Runtime.ScriptableObjects
 {
-    [CreateAssetMenu(fileName = "Tile Data", menuName = "WorldPainter/TileData", order = 0)]
+    [CreateAssetMenu(fileName = "TileView Data", menuName = "WorldPainter/TileData", order = 0)]
     public class TileData : ScriptableObject
     {
         [Header("Visual")] 
@@ -23,7 +23,7 @@ namespace WorldPainter.Runtime.ScriptableObjects
         public Color TintColor => tintColor;
         public Sprite DefaultSprite => defaultSprite;
 
-        public Sprite GetSpriteForNeighbors(Vector2Int position, IWorldDataProvider provider)
+        public Sprite GetSpriteForNeighbors(Vector2Int position, IWorldFacade provider)
         {
             foreach (TileRule rule in tileRules.Where(rule => rule.CheckRule(position, this, provider)))
                 return rule.RuleSprite;

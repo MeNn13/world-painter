@@ -5,23 +5,6 @@ namespace WorldPainter.Runtime.ScriptableObjects
     [CreateAssetMenu(fileName = "MultiTile Data", menuName = "WorldPainter/MultiTileData")]
     public class MultiTileData : TileData
     {
-        public enum AttachmentType
-        {
-            None, // Не крепится
-            Ground, // Крепится к земле (стоит на блоках)
-            Ceiling, // Крепится к потолку
-            Wall, // Крепится к стене (направление будет в отдельном поле)
-            GroundAndCeiling // Две точки крепления (двери)
-        }
-
-        public enum WallDirection
-        {
-            Back, // Задняя стена
-            Left,
-            Right,
-            Front // Передняя стена
-        }
-
         [Header("Multitile Settings")] [Tooltip("Размер объекта в тайлах (ширина x высота)")]
         public Vector2Int size = Vector2Int.one;
 
@@ -31,8 +14,12 @@ namespace WorldPainter.Runtime.ScriptableObjects
         [Header("Placement Rules")] [Tooltip("К чему должен крепиться объект")]
         public AttachmentType attachmentType = AttachmentType.Ground;
 
-        [Tooltip("Направление стены (если attachmentType = Wall)")]
-        public WallDirection wallDirection = WallDirection.Back;
+        [Header("Wall Placement Settings")]
+        [Tooltip("С какой стороны объекта требуется стена")]
+        public WallAttachmentSide wallAttachmentSide = WallAttachmentSide.Back;
+        
+        [Header("Wall Placement Settings")]
+        public WallAttachmentTarget wallAttachmentTarget = WallAttachmentTarget.BackgroundWall;
 
         [Tooltip("Точка крепления относительно левого нижнего угла (в тайлах)")]
         public Vector2Int attachmentPoint = Vector2Int.zero;
@@ -81,5 +68,29 @@ namespace WorldPainter.Runtime.ScriptableObjects
         
         public bool ShouldCheckNeighbors() => 
             attachmentType is not AttachmentType.None;
+    }
+    
+    public enum AttachmentType
+    {
+        None, // Не крепится
+        Ground, // Крепится к земле (стоит на блоках)
+        Ceiling, // Крепится к потолку
+        Wall, // Крепится к стене (направление будет в отдельном поле)
+        GroundAndCeiling // Две точки крепления (двери)
+    }
+    
+    public enum WallAttachmentTarget
+    {
+        BackgroundWall,   // Только к фоновым стенам
+        SolidTile,        // Только к твердым блокам  
+        Any               // К чему угодно (стенам или блокам)
+    }
+    
+    public enum WallAttachmentSide
+    {
+        Back,      // ТОЛЬКО к задней стене (как картины)
+        Left,      // ТОЛЬКО к левой стене (специальные случаи)
+        Right,     // ТОЛЬКО к правой стене (специальные случаи)
+        AnySide    // К любой стороне (как факелы)
     }
 }

@@ -27,7 +27,6 @@ namespace WorldPainter.Runtime.Utils
                 chunkCoord.y * CHUNK_SIZE + localPos.y);
         }
         
-        // НОВЫЙ МЕТОД: Конвертация мировых координат в позицию сетки
         public static Vector2Int WorldToGridPosition(Vector3 worldPosition, bool snapToCenter = true)
         {
             if (snapToCenter)
@@ -45,8 +44,7 @@ namespace WorldPainter.Runtime.Utils
                 Mathf.FloorToInt(worldPosition.y)
                 );
         }
-
-        // НОВЫЙ МЕТОД: Конвертация позиции сетки в мировые координаты
+        
         public static Vector3 GridToWorldPosition(Vector2Int gridPosition, bool isCenter = true)
         {
             if (isCenter)
@@ -62,6 +60,14 @@ namespace WorldPainter.Runtime.Utils
                 gridPosition.x,
                 gridPosition.y,
                 0);
+        }
+        
+        public static (Vector2Int, Vector2Int) GetChunkCoordsAndLocalPos(Vector2Int worldPos)
+        {
+            Vector2Int chunkCoord = WorldGrid.WorldToChunkCoord(worldPos);
+            Vector2Int localPos = WorldGrid.WorldToLocalInChunk(worldPos);
+
+            return (chunkCoord, localPos);
         }
 
         private static int PositiveMod(int x, int m)

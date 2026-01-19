@@ -1,46 +1,57 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using WorldPainter.Runtime.Providers;
+using WorldPainter.Runtime.Providers.Dependencies;
 using WorldPainter.Runtime.ScriptableObjects;
 
 namespace WorldPainter.Runtime.Core
 {
-    public class TilePool : MonoBehaviour
+    public class TilePool : MonoBehaviour, IInitializable
     {
-        [SerializeField] private Tile tilePrefab;
+        [SerializeField] private TileView tileViewPrefab;
         [SerializeField] private MultiTile multiTilePrefab;
         [SerializeField] private int initialPoolSize = 50;
 
-        private Queue<Tile> _pool = new();
-        private Queue<MultiTile> _multiTilePool = new(); // НОВЫЙ пул
+        private readonly Queue<MultiTile> _multiTilePool = new();
+        private  Queue<TileView> _pool = new();
         private Transform _poolContainer;
-        private Transform _multiTilePoolContainer; // НОВЫЙ контейнер
+        private Transform _multiTilePoolContainer;
+        private IWorldFacade _worldFacade;
+        
+        public bool IsInitialized { get; private set; }
 
         private void Awake()
         {
-            // Контейнер для обычных тайлов
             _poolContainer = new GameObject("TilePool Container").transform;
             _poolContainer.SetParent(transform);
             _poolContainer.gameObject.SetActive(false);
-
-            // Контейнер для мультитайлов
+            
             _multiTilePoolContainer = new GameObject("MultiTilePool Container").transform;
             _multiTilePoolContainer.SetParent(transform);
             _multiTilePoolContainer.gameObject.SetActive(false);
 
             WarmPool();
         }
+        
+        public void Initialize(IDependencyContainer container)
+        {
+            if (IsInitialized) return;
+
+            _worldFacade = container.WorldFacade;
+            
+            IsInitialized = true;
+        }
 
         private void WarmPool()
         {
             for (int i = 0; i < initialPoolSize; i++)
             {
-                Tile tile = CreateNewTile();
-                tile.transform.SetParent(_poolContainer);
-                _pool.Enqueue(tile);
-            
-                // Можно также предзаполнить пул мультитайлов
-                if (multiTilePrefab != null)
+                TileView tileView = CreateNewTile();
+                tileView.transform.SetParent(_poolContainer);
+                _pool.Enqueue(tileView);
+                
+                if (multiTilePrefab is not null)
                 {
                     MultiTile multiTile = CreateNewMultiTile(false);
                     multiTile.transform.SetParent(_multiTilePoolContainer);
@@ -49,34 +60,33 @@ namespace WorldPainter.Runtime.Core
             }
         }
 
-        private Tile CreateNewTile(bool setActive = true)
+        private TileView CreateNewTile(bool setActive = true)
         {
-            Tile tile = Instantiate(tilePrefab);
-            tile.gameObject.SetActive(setActive);
-            return tile;
+            TileView tileView = Instantiate(tileViewPrefab);
+            tileView.gameObject.SetActive(setActive);
+            return tileView;
         }
 
-        public Tile GetTile(TileData data, Vector2Int gridPosition)
+        public TileView GetTile(TileData data, Vector2Int gridPosition)
         {
-            Tile tile;
-
-            // ПРОБУЕМ БРАТЬ ИЗ ПУЛА, ПОКА НЕ НАЙДЕМ ЖИВОЙ ТАЙЛ
+            CleanPool();
+            
+            TileView tileView;
+            
             while (_pool.Count > 0)
             {
-                tile = _pool.Dequeue();
-
-                // БЕЗОПАСНАЯ ПРОВЕРКА
-                if (tile != null)
+                tileView = _pool.Dequeue();
+                
+                if (tileView != null)
                 {
                     try
                     {
-                        // Если можем получить gameObject - тайл жив
-                        var go = tile.gameObject;
+                        var go = tileView.gameObject;
                         if (go != null)
                         {
                             go.SetActive(true);
-                            tile.Initialize(data, gridPosition);
-                            return tile;
+                            tileView.Initialize(data, gridPosition, _worldFacade);
+                            return tileView;
                         }
                     }
                     catch
@@ -88,27 +98,27 @@ namespace WorldPainter.Runtime.Core
             }
 
             // Если в пуле нет живых тайлов - создаем новый
-            tile = CreateNewTile();
-            tile.Initialize(data, gridPosition);
-            return tile;
+            tileView = CreateNewTile();
+            tileView.Initialize(data, gridPosition, _worldFacade);
+            return tileView;
         }
 
-        public void ReturnTile(Tile tile)
+        public void ReturnTile(TileView tileView)
         {
-            if (tile == null) return;
+            if (tileView == null) return;
 
                 #if UNITY_EDITOR
             // В РЕДАКТОРЕ УНИЧТОЖАЕМ ТАЙЛЫ
             if (!Application.isPlaying)
             {
-                DestroyImmediate(tile.gameObject);
+                DestroyImmediate(tileView.gameObject);
                 return;
             }
     #endif
 
-            tile.Recycle();
-            tile.transform.SetParent(_poolContainer);
-            _pool.Enqueue(tile);
+            tileView.Recycle();
+            tileView.transform.SetParent(_poolContainer);
+            _pool.Enqueue(tileView);
         }
 
         public MultiTile GetMultiTile(MultiTileData data, Vector2Int rootPosition)
@@ -133,10 +143,7 @@ namespace WorldPainter.Runtime.Core
             multiTile.Initialize(data, rootPosition);
             return multiTile;
         }
-
-        /// <summary>
-        /// Возвращает мультитайл в пул
-        /// </summary>
+        
         public void ReturnMultiTile(MultiTile multiTile)
         {
             if (multiTile == null) return;
@@ -154,10 +161,7 @@ namespace WorldPainter.Runtime.Core
             multiTile.transform.SetParent(_multiTilePoolContainer);
             _multiTilePool.Enqueue(multiTile);
         }
-
-        /// <summary>
-        /// Создаёт новый мультитайл
-        /// </summary>
+        
         private MultiTile CreateNewMultiTile(bool setActive = true)
         {
             if (multiTilePrefab == null)
@@ -170,6 +174,17 @@ namespace WorldPainter.Runtime.Core
             multiTile.gameObject.SetActive(setActive);
             return multiTile;
         }
-
+        
+        private void CleanPool()
+        {
+            var aliveTiles = new Queue<TileView>();
+            while (_pool.Count > 0)
+            {
+                var tile = _pool.Dequeue();
+                if (tile != null) 
+                    aliveTiles.Enqueue(tile);
+            }
+            _pool = aliveTiles;
+        }
     }
 }
