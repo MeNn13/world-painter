@@ -21,6 +21,18 @@ namespace WorldPainter.Runtime.Configurations
 
             tileData = null;
             return false;
+        }     
+        public bool TryGetTileDataFromName(string tileName, out TileData tileData)
+        {
+            foreach (var data in config)
+                if (data.DisplayName == tileName)
+                {
+                    tileData = data;
+                    return true;
+                }
+
+            tileData = null;
+            return false;
         }
         public WallData[] GetAllWallData()
         {
