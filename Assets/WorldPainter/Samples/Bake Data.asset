@@ -18,8 +18,8 @@ MonoBehaviour:
   defaultSprite: {fileID: 21300000, guid: f1823328e88031d46a04597cffec0ca4, type: 3}
   size: {x: 2, y: 2}
   pivotOffset: {x: 1, y: 1}
-  attachmentType: 3
-  wallAttachmentSide: 3
+  attachmentType: 1
+  wallAttachmentSide: 0
   wallAttachmentTarget: 0
   attachmentPoint: {x: 0, y: 0}
   secondaryAttachmentPoint: {x: 0, y: 0}

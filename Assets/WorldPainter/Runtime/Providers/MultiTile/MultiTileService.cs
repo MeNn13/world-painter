@@ -228,6 +228,7 @@ namespace WorldPainter.Runtime.Providers.MultiTile
         }
         private void AddMultiTileReferenceToChunks(Vector2Int worldPos, Vector2Int rootPosition)
         {
+
             if (_chunkService is null) return;
 
             Vector2Int chunkCoord = WorldGrid.WorldToChunkCoord(worldPos);

@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca368f2218f24182a1101827a411202d, type: 3}
+  m_Name: Tile Data Configuration
+  m_EditorClassIdentifier: WorldPainter.Runtime::WorldPainter.Runtime.Configurations.TileDataConfiguration
+  config:
+  - {fileID: 11400000, guid: 39d4d3e99897d0546997fef755c8389d, type: 2}
+  - {fileID: 11400000, guid: 9584821c8b8fa404497fc08a046eb68c, type: 2}
+  - {fileID: 11400000, guid: 0e454e0c11392b84191ee65a6a77b4a6, type: 2}
