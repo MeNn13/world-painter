@@ -26,6 +26,7 @@ namespace WorldPainter.Editor.Windows
         private static void GetOrCreateWindow()
         {
             _instance ??= GetWindow<TilePaletteWindow>("TileView Palette");
+            _instance.Show();
         }
 
         public static TilePaletteWindow GetWindowIfOpen()

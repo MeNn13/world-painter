@@ -72,11 +72,8 @@ namespace WorldPainter.Editor.Tools.Painters
             Vector3 worldPoint = GetMouseWorldPosition();
             Vector2Int newPos = CalculateGridPosition(worldPoint, false);
             
-            if (_lastPreviewPosition != newPos)
-            {
+            if (!_lastPreviewPosition.Equals(newPos))
                 _lastPreviewPosition = newPos;
-                //_lastPlacementValid = WorldFacade?.CanPlaceMultiTile(_selectedMultiTile, newPos) ?? false;
-            }
             
             Vector3 bottomLeftPosition = WorldGrid.GridToWorldPosition(newPos, false) - new Vector3(0.5f, 0.5f, 0);
             Vector3 spritePosition = bottomLeftPosition + new Vector3(

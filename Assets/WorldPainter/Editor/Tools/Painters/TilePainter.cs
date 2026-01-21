@@ -1,94 +1,23 @@
-﻿using System;
-using UnityEditor;
-using UnityEngine;
+﻿using UnityEngine;
 using WorldPainter.Runtime.ScriptableObjects;
-using WorldPainter.Runtime.Utils;
 
 namespace WorldPainter.Editor.Tools.Painters
 {
-    public class TilePainter : BasePainter
+    public class TilePainter : SingleTilePainter<TileData>
     {
-        private TileData _selectedTile;
-
-        public TileData SelectedTile
-        {
-            get => _selectedTile;
-            set
-            {
-                if (_selectedTile != value)
-                {
-                    _selectedTile = value;
-                    Cleanup();
-                }
-            }
-        }
+        protected override string PreviewId => "tile_preview";
+        protected override Color PreviewColor => Color.cyan;
+        protected override string TileTypeName => "tile";
         
-        public PaintMode Mode { get; set; } = PaintMode.Paint;
-
-        public override void HandleInput(SceneView sceneView)
+        protected override void PaintTile(Vector2Int gridPos)
         {
-            Event e = Event.current;
-            if (!e.control 
-                || e.type is not EventType.MouseDown 
-                && e.type is not EventType.MouseDrag)
-                return;
-                
-            Vector3 worldPoint = GetMouseWorldPosition();
-            Vector2Int gridPos = CalculateGridPosition(worldPoint);
-            
-            if (WorldFacade == null)
-                return;
-                
-            switch (Mode)
-            {
-                case PaintMode.Paint:
-                    if (_selectedTile is not null)
-                    {
-                        WorldFacade.SetTileAt(gridPos, _selectedTile);
-                        Debug.Log($"Painted {_selectedTile.DisplayName} at {gridPos}");
-                        e.Use();
-                    }
-                    break;
-                    
-                case PaintMode.Erase:
-                    WorldFacade.SetTileAt(gridPos, null);
-                    Debug.Log($"Erased tile at {gridPos}");
-                    e.Use();
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+            WorldFacade.SetTileAt(gridPos, SelectedTile);
+            Debug.Log($"Painted {SelectedTile.DisplayName} at {gridPos}");
         }
-        
-        public override void DrawPreview()
+        protected override void EraseTile(Vector2Int gridPos)
         {
-            if (_selectedTile?.DefaultSprite is null)
-            {
-                Cleanup();
-                return;
-            }
-            
-            Vector3 worldPoint = GetMouseWorldPosition();
-            Vector2Int previewPos = CalculateGridPosition(worldPoint);
-            Vector3 worldPosition = WorldGrid.GridToWorldPosition(previewPos) - new Vector3(0.5f, 0.5f, 0);
-            
-            SpriteRenderer renderer = PreviewManager.GetOrCreateSpriteRenderer("tile_preview");
-            if (renderer == null)
-            {
-                Debug.LogError("Failed to create sprite renderer for preview");
-                return;
-            }
-            PreviewManager.SetPreviewTransform("tile_preview", worldPosition);
-            PreviewManager.SetPreviewSprite("tile_preview", _selectedTile.DefaultSprite, 
-                new Color(1, 1, 1, 0.6f));
-            
-            Handles.color = Color.cyan;
-            Handles.DrawWireCube(worldPosition, Vector3.one * 0.95f);
-        }
-        
-        public override void Cleanup()
-        {
-            PreviewManager.DestroyPreview("tile_preview");
+            WorldFacade.SetTileAt(gridPos, null);
+            Debug.Log($"Erased tile at {gridPos}");
         }
     }
 }
