@@ -64,7 +64,7 @@ namespace WorldPainter.Editor.Tools.Painters
         {
             PreviewManager.DestroyPreview(PreviewId);
         }
-        public Vector3 GetWorldPosition()
+        protected Vector3 GetWorldPosition()
         {
             Vector3 worldPoint = GetMouseWorldPosition();
             Vector2Int previewPos = CalculateGridPosition(worldPoint);
@@ -73,12 +73,11 @@ namespace WorldPainter.Editor.Tools.Painters
 
         private void Paint(Vector2Int gridPos, Event e)
         {
-            if (Mode == PaintMode.Paint)
-                if (_selectedTile is not null)
-                {
-                    PaintTile(gridPos);
-                    e.Use();
-                }
+            if (_selectedTile is not null && Mode == PaintMode.Paint)
+            {
+                PaintTile(gridPos);
+                e.Use();
+            }
 
             if (Mode == PaintMode.Erase)
             {

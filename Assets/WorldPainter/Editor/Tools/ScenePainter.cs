@@ -8,7 +8,7 @@ using WorldPainter.Runtime.Providers;
 namespace WorldPainter.Editor.Tools
 {
     [InitializeOnLoad]
-    public class ScenePainter
+    internal class ScenePainter
     {
         private static ScenePainter _instance;
         public static ScenePainter Instance => _instance ??= new ScenePainter();
@@ -46,35 +46,19 @@ namespace WorldPainter.Editor.Tools
         private void OnSceneGUI(SceneView sceneView)
         {
             InitializeIfNeeded();
-    
-            // Получаем Overlay напрямую через статический метод
+            
             var overlay = WorldPainterOverlay.GetInstance();
-    
-            if (overlay == null || !overlay.IsPainting)
-            {
-                CleanupAllPreviews();
-                return;
-            }
-    
-            // Используем состояние из Overlay
-            var state = overlay.GetState();
-    
-            if (state == null || !state.IsPainting)
-            {
-                CleanupAllPreviews();
-                return;
-            }
 
-            UpdatePainters(state);
-            HandleInput(state, sceneView);
+            UpdatePainters(overlay.State);
+            HandleInput(overlay.State, sceneView);
     
             Event e = Event.current;
 
             if (e.control && e.type is EventType.MouseDown or EventType.MouseDrag)
-                HandleInput(state, sceneView);
+                HandleInput(overlay.State, sceneView);
 
             if (e.type == EventType.Repaint)
-                DrawPreviews(state);
+                DrawPreviews(overlay.State);
 
             if (e.type == EventType.MouseMove)
                 sceneView.Repaint();
@@ -111,15 +95,13 @@ namespace WorldPainter.Editor.Tools
 
         private BasePainter DetermineActivePainter(WorldPainterState state)
         {
-            if (state.SelectedMultiTile is not null)
-                return _multiTilePainter;
-            
-            if (state.SelectedWall is not null)
-                return _wallPainter;
-            
-            return state.SelectedTile is not null
-                ? _tilePainter
-                : null;
+            return state.ActiveTool switch
+            {
+                ToolType.Tile => _tilePainter,
+                ToolType.Wall => _wallPainter,
+                ToolType.MultiTile => _multiTilePainter,
+                _ => null
+            };
         }
         private void SetupPainter(BasePainter painter, WorldPainterState state)
         {
@@ -129,15 +111,15 @@ namespace WorldPainter.Editor.Tools
             {
                 case TilePainter tilePainter:
                     tilePainter.SelectedTile = state.SelectedTile;
-                    tilePainter.Mode = state.CurrentPaintMode;
+                    tilePainter.Mode = state.PaintMode;
                     break;
                 case WallPainter wallPainter:
                     wallPainter.SelectedTile = state.SelectedWall;
-                    wallPainter.Mode = state.CurrentPaintMode;
+                    wallPainter.Mode = state.PaintMode;
                     break;
                 case MultiTilePainter multiTilePainter:
                     multiTilePainter.SelectedMultiTile = state.SelectedMultiTile;
-                    multiTilePainter.Mode = state.CurrentPaintMode;
+                    multiTilePainter.Mode = state.PaintMode;
                     break;
             }
         }
