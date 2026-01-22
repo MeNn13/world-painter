@@ -21,15 +21,18 @@ namespace WorldPainter.Editor.Tools.Painters
             }
         }
 
-        public PaintMode Mode { get; set; } = PaintMode.Paint;
-
         protected abstract string PreviewId { get; }
         protected abstract Color PreviewColor { get; }
         protected abstract string TileTypeName { get; }
         protected abstract void PaintTile(Vector2Int gridPos);
         protected abstract void EraseTile(Vector2Int gridPos);
+        protected Vector3 GetWorldPosition()
+        {
+            Vector2Int previewPos = CalculateGridPosition();
+            return WorldGrid.GridToWorldPosition(previewPos) - new Vector3(0.5f, 0.5f, 0);
+        }
 
-        public override void HandleInput(SceneView sceneView)
+        public override void HandleInput(PaintMode mode)
         {
             Event e = Event.current;
             if (!e.control
@@ -37,13 +40,12 @@ namespace WorldPainter.Editor.Tools.Painters
                 && e.type is not EventType.MouseDrag)
                 return;
 
-            Vector3 worldPoint = GetMouseWorldPosition();
-            Vector2Int gridPos = CalculateGridPosition(worldPoint);
+            Vector2Int gridPos = CalculateGridPosition();
 
             if (WorldFacade is null)
                 return;
 
-            Paint(gridPos, e);
+            Paint(gridPos, mode, e);
         }
         public override void DrawPreview()
         {
@@ -60,26 +62,20 @@ namespace WorldPainter.Editor.Tools.Painters
             Handles.color = PreviewColor;
             Handles.DrawWireCube(worldPosition, Vector3.one * 0.95f);
         }
-        public override void Cleanup()
+        public void Cleanup()
         {
             PreviewManager.DestroyPreview(PreviewId);
         }
-        protected Vector3 GetWorldPosition()
-        {
-            Vector3 worldPoint = GetMouseWorldPosition();
-            Vector2Int previewPos = CalculateGridPosition(worldPoint);
-            return WorldGrid.GridToWorldPosition(previewPos) - new Vector3(0.5f, 0.5f, 0);
-        }
 
-        private void Paint(Vector2Int gridPos, Event e)
+        private void Paint(Vector2Int gridPos, PaintMode mode, Event e)
         {
-            if (_selectedTile is not null && Mode == PaintMode.Paint)
+            if (_selectedTile is not null && mode == PaintMode.Paint)
             {
                 PaintTile(gridPos);
                 e.Use();
             }
 
-            if (Mode == PaintMode.Erase)
+            if (mode == PaintMode.Erase)
             {
                 EraseTile(gridPos);
                 e.Use();
@@ -93,6 +89,7 @@ namespace WorldPainter.Editor.Tools.Painters
                 Debug.LogError($"Failed to create sprite renderer for {TileTypeName} preview");
                 return;
             }
+            
             PreviewManager.SetPreviewTransform(PreviewId, worldPosition);
             PreviewManager.SetPreviewSprite(PreviewId, _selectedTile.DefaultSprite,
                 PreviewColor * new Color(1, 1, 1, 0.6f));

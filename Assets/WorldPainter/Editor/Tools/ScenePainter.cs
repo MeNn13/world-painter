@@ -12,9 +12,9 @@ namespace WorldPainter.Editor.Tools
     {
         private static ScenePainter _instance;
         public static ScenePainter Instance => _instance ??= new ScenePainter();
-        
+
         private WorldPainterOverlay _overlay;
-        
+
         private readonly PreviewManager _previewManager;
         private readonly TilePainter _tilePainter;
         private readonly WallPainter _wallPainter;
@@ -33,29 +33,29 @@ namespace WorldPainter.Editor.Tools
         private ScenePainter()
         {
             _previewManager = new PreviewManager();
-            
+
             _tilePainter = new TilePainter();
             _wallPainter = new WallPainter();
             _multiTilePainter = new MultiTilePainter();
-            
+
             _tilePainter.SetPreviewManager(_previewManager);
             _wallPainter.SetPreviewManager(_previewManager);
             _multiTilePainter.SetPreviewManager(_previewManager);
         }
-        
+
         private void OnSceneGUI(SceneView sceneView)
         {
             InitializeIfNeeded();
-            
+
             var overlay = WorldPainterOverlay.GetInstance();
 
             UpdatePainters(overlay.State);
-            HandleInput(overlay.State, sceneView);
-    
+            HandleInput(overlay.State);
+
             Event e = Event.current;
 
             if (e.control && e.type is EventType.MouseDown or EventType.MouseDrag)
-                HandleInput(overlay.State, sceneView);
+                HandleInput(overlay.State);
 
             if (e.type == EventType.Repaint)
                 DrawPreviews(overlay.State);
@@ -63,6 +63,14 @@ namespace WorldPainter.Editor.Tools
             if (e.type == EventType.MouseMove)
                 sceneView.Repaint();
         }
+        
+        public void CleanupAllPreviews()
+                {
+                    _previewManager.DestroyAllPreviews();
+                    _tilePainter.Cleanup();
+                    _wallPainter.Cleanup();
+                    _multiTilePainter.Cleanup();
+                }
 
         private void InitializeIfNeeded()
         {
@@ -70,7 +78,7 @@ namespace WorldPainter.Editor.Tools
             {
                 IWorldFacade worldFacade = FindWorldManager();
                 _worldFacade = worldFacade;
-                
+
                 _tilePainter.SetWorldProvider(_worldFacade);
                 _wallPainter.SetWorldProvider(_worldFacade);
                 _multiTilePainter.SetWorldProvider(_worldFacade);
@@ -106,50 +114,35 @@ namespace WorldPainter.Editor.Tools
         private void SetupPainter(BasePainter painter, WorldPainterState state)
         {
             if (painter == null) return;
-    
-            switch (painter)
-            {
-                case TilePainter tilePainter:
-                    tilePainter.SelectedTile = state.SelectedTile;
-                    tilePainter.Mode = state.PaintMode;
-                    break;
-                case WallPainter wallPainter:
-                    wallPainter.SelectedTile = state.SelectedWall;
-                    wallPainter.Mode = state.PaintMode;
-                    break;
-                case MultiTilePainter multiTilePainter:
-                    multiTilePainter.SelectedMultiTile = state.SelectedMultiTile;
-                    multiTilePainter.Mode = state.PaintMode;
-                    break;
-            }
+
+            if (painter is TilePainter tilePainter)
+                tilePainter.SelectedTile = state.SelectedTile;
+            
+            if (painter is WallPainter wallPainter)
+                wallPainter.SelectedTile = state.SelectedWall;
+            
+            if (painter is MultiTilePainter multiTilePainter)
+                multiTilePainter.SelectedMultiTile = state.SelectedMultiTile;
         }
 
-        private void HandleInput(WorldPainterState state, SceneView sceneView)
+        private void HandleInput(WorldPainterState state)
         {
             var activePainter = DetermineActivePainter(state);
-            activePainter?.HandleInput(sceneView);
+            activePainter?.HandleInput(state.PaintMode);
         }
         private void DrawPreviews(WorldPainterState state)
         {
             var activePainter = DetermineActivePainter(state);
             activePainter?.DrawPreview();
         }
-
-        public void CleanupAllPreviews()
-        {
-            _previewManager.DestroyAllPreviews();
-            _tilePainter.Cleanup();
-            _wallPainter.Cleanup();
-            _multiTilePainter.Cleanup();
-        }
+        
         private void CleanupInactivePainters(BasePainter activePainter)
-                {
-                    if (activePainter != _tilePainter) _tilePainter.Cleanup();
-                    if (activePainter != _wallPainter) _wallPainter.Cleanup();
-                    if (activePainter != _multiTilePainter) _multiTilePainter.Cleanup();
-                }
-        
-        
+        {
+            if (activePainter != _tilePainter) _tilePainter.Cleanup();
+            if (activePainter != _wallPainter) _wallPainter.Cleanup();
+            if (activePainter != _multiTilePainter) _multiTilePainter.Cleanup();
+        }
+
         private void OnPlayModeStateChanged(PlayModeStateChange state)
         {
             if (state == PlayModeStateChange.ExitingEditMode || state == PlayModeStateChange.ExitingPlayMode)
