@@ -10,13 +10,12 @@ namespace WorldPainter.Editor.Tools.Painters
         protected IWorldFacade WorldFacade;
         protected PreviewManager PreviewManager;
         
-        public abstract void HandleInput(SceneView sceneView);
+        public abstract void HandleInput(PaintMode mode);
         public abstract void DrawPreview();
-        public abstract void Cleanup();
-        
-        public virtual void SetWorldProvider(IWorldFacade provider) => 
+
+        public void SetWorldProvider(IWorldFacade provider) => 
             WorldFacade = provider;
-        public virtual void SetPreviewManager(PreviewManager manager) => 
+        public void SetPreviewManager(PreviewManager manager) => 
             PreviewManager = manager;
             
         protected Vector3 GetMouseWorldPosition()
@@ -29,7 +28,11 @@ namespace WorldPainter.Editor.Tools.Painters
                 : Vector3.zero;
         }
         
-        protected Vector2Int CalculateGridPosition(Vector3 worldPoint, bool snapToCenter = true) => 
-            WorldGrid.WorldToGridPosition(worldPoint, snapToCenter);
+        protected Vector2Int CalculateGridPosition(bool snapToCenter = true)
+        {
+            var worldPoint = GetMouseWorldPosition();
+            
+            return WorldGrid.WorldToGridPosition(worldPoint, snapToCenter);
+        }
     }
 }

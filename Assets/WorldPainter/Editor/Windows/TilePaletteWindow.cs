@@ -1,5 +1,6 @@
 ﻿using UnityEditor;
 using UnityEngine;
+using WorldPainter.Editor.Windows.Search;
 using WorldPainter.Runtime.Configurations;
 using WorldPainter.Runtime.ScriptableObjects;
 
@@ -7,6 +8,9 @@ namespace WorldPainter.Editor.Windows
 {
     public class TilePaletteWindow : EditorWindow
     {
+        private TileSearchFilter _searchFilter;
+        private TileSearchResultsView _searchResultsView;
+        
         private TileDataConfiguration _tileConfig;
         private TileData _selectedTile;
         private Vector2 _scrollPosition;
@@ -22,6 +26,7 @@ namespace WorldPainter.Editor.Windows
         private static void GetOrCreateWindow()
         {
             _instance ??= GetWindow<TilePaletteWindow>("TileView Palette");
+            _instance.Show();
         }
 
         public static TilePaletteWindow GetWindowIfOpen()
@@ -41,7 +46,30 @@ namespace WorldPainter.Editor.Windows
         private void OnEnable()
         {
             _instance = this;
+            
+            _searchFilter = new TileSearchFilter();
+            _searchResultsView = new TileSearchResultsView();
+            _searchResultsView.OnTileSelected += OnSearchResultSelected;
+            
             GetTileConfig();
+        }
+        private void OnDisable()
+        {
+            if (_searchResultsView != null)
+                _searchResultsView.OnTileSelected -= OnSearchResultSelected;
+        }
+        private void OnSearchResultSelected(TileData tile)
+        {
+            _selectedTile = tile;
+            _searchFilter.SearchQuery = string.Empty;
+    
+            GUI.changed = true;
+    
+            GUI.FocusControl(null);
+            EditorGUIUtility.editingTextField = false;
+            GUIUtility.keyboardControl = 0;
+    
+            Repaint();
         }
 
         private void OnGUI()
@@ -50,6 +78,17 @@ namespace WorldPainter.Editor.Windows
 
             if (_tileConfig is null)
                 return;
+            
+            DrawSearchSection();
+            
+            if (_searchFilter.HasSearchQuery && _tileConfig is not null)
+            {
+                var searchResults = _searchFilter.FilterTiles(_tileConfig.Config);
+                _searchResultsView.DrawResults(searchResults);
+                
+                DrawSelectedTileInfo();
+                return;
+            }
 
             EditorGUILayout.Space();
 
@@ -58,20 +97,14 @@ namespace WorldPainter.Editor.Windows
             SelectTileData();
 
             EditorGUILayout.EndScrollView();
-
-            if (_selectedTile is not null)
-            {
-                EditorGUILayout.Space();
-                EditorGUILayout.LabelField("Selected TileData:", EditorStyles.boldLabel);
-                EditorGUILayout.LabelField($"Name: {_selectedTile.DisplayName}");
-                EditorGUILayout.LabelField($"ID: {_selectedTile.TileId}");
-            }
+            
+            DrawSelectedTileInfo();
         }
 
         private void GetTileConfig()
         {
             _tileConfig = EditorGUILayout.ObjectField(
-                _tileConfig is not null ? "Configuration" : "Select configuration:",
+                _tileConfig is not null ? "Конфигурация:" : "Выбрать конфигурацию:",
                 _tileConfig, typeof(TileDataConfiguration), false) as TileDataConfiguration;
         }
         private void SelectTileData()
@@ -83,13 +116,57 @@ namespace WorldPainter.Editor.Windows
 
             EditorGUILayout.EndHorizontal();
         }
-
+        private void DrawSearchSection()
+        {
+            EditorGUILayout.BeginHorizontal();
+    
+            GUI.SetNextControlName("TileSearchField");
+            
+            string searchText = EditorGUILayout.TextField("Поиск тайлов:", _searchFilter.SearchQuery);
+            
+            if (searchText != _searchFilter.SearchQuery)
+                _searchFilter.SearchQuery = searchText;
+    
+            if (!string.IsNullOrEmpty(_searchFilter.SearchQuery))
+            {
+                if (GUILayout.Button("×", GUILayout.Width(20)))
+                {
+                    _searchFilter.SearchQuery = string.Empty;
+                    GUI.FocusControl("");
+                    EditorGUIUtility.editingTextField = false;
+                }
+            }
+            else
+            {
+                GUILayout.Label("", GUILayout.Width(20));
+            }
+    
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.Space(5);
+        }
+        
+        private void DrawSelectedTileInfo()
+        {
+            if (_selectedTile is not null)
+            {
+                EditorGUILayout.Space();
+                EditorGUILayout.LabelField($"Выбран TileData: {_selectedTile.name}", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField($"Название: {_selectedTile.DisplayName}");
+                EditorGUILayout.LabelField($"ID: {_selectedTile.TileId}");
+            }
+        }
         private void RenderButton(TileData tile)
         {
             GUILayout.BeginVertical(GUILayout.Width(70));
 
             if (GUILayout.Button("", GUILayout.Width(64), GUILayout.Height(64)))
+            {
                 _selectedTile = tile;
+                _searchFilter.SearchQuery = string.Empty;
+                GUI.FocusControl("");
+                EditorGUIUtility.editingTextField = false;
+                Repaint();
+            }
 
             Rect rect = GUILayoutUtility.GetLastRect();
 

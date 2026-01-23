@@ -1,5 +1,4 @@
-﻿// 📁 WorldPainter/Editor/Editors/TileDataEditor.cs
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 using WorldPainter.Runtime.ScriptableObjects;
 
@@ -29,27 +28,18 @@ namespace WorldPainter.Editor.Editors
 
             EditorGUILayout.Space(10);
 
-            // Базовые настройки
             EditorGUILayout.LabelField("TileView Data", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(_displayNameProp);
             EditorGUILayout.PropertyField(_tintColorProp);
 
             EditorGUILayout.Space(10);
 
-            // ВЫБОР ДЕФОЛТНОГО СПРАЙТА - КАК В UNITY
             EditorGUILayout.LabelField("Default Sprite", EditorStyles.boldLabel);
             DrawSpriteSelector(_defaultSpriteProp);
 
             EditorGUILayout.Space(20);
             EditorGUILayout.LabelField("TileView Rules", EditorStyles.boldLabel);
 
-            // Кнопка добавления правила
-            if (GUILayout.Button("+ Add New Rule", GUILayout.Height(30)))
-            {
-                AddNewRule();
-            }
-
-            // Список правил
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
 
             for (int i = 0; i < _tileRulesProp.arraySize; i++)
@@ -58,6 +48,9 @@ namespace WorldPainter.Editor.Editors
                 EditorGUILayout.Space(10);
             }
 
+            if (GUILayout.Button("+ Add New Rule", GUILayout.Height(30)))
+                AddNewRule();
+
             EditorGUILayout.EndScrollView();
 
             serializedObject.ApplyModifiedProperties();
@@ -65,41 +58,69 @@ namespace WorldPainter.Editor.Editors
 
         private void DrawSpriteSelector(SerializedProperty spriteProp)
         {
-            EditorGUILayout.BeginHorizontal();
-
-            // Квадрат 64x64
-            Rect rect = EditorGUILayout.GetControlRect(
-                GUILayout.Width(64),
-                GUILayout.Height(64));
+            EditorGUILayout.BeginVertical();
 
             Sprite currentSprite = (Sprite)spriteProp.objectReferenceValue;
 
-            // Создаем НЕВИДИМЫЙ ObjectField поверх квадрата
-            Rect objectFieldRect = rect;
-            objectFieldRect.width = 200; // Делаем шире для удобства
+            Rect spriteRect = GetSpriteRect();
 
             Sprite newSprite = (Sprite)EditorGUI.ObjectField(
-                objectFieldRect,
-                "",
+                spriteRect,
                 currentSprite,
                 typeof(Sprite),
-                false
-                );
+                false);
 
             if (newSprite != currentSprite)
-            {
                 spriteProp.objectReferenceValue = newSprite;
-            }
 
-            EditorGUILayout.EndHorizontal();
-
-            // Информация
-            if (currentSprite != null)
+            if (currentSprite is not null)
             {
+                EditorGUILayout.Space(5);
                 EditorGUILayout.LabelField($"Selected: {currentSprite.name}", EditorStyles.miniBoldLabel);
                 EditorGUILayout.LabelField($"Size: {currentSprite.textureRect.width}x{currentSprite.textureRect.height}",
                     EditorStyles.miniLabel);
             }
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawRule(int ruleIndex)
+        {
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+
+            var ruleProp = _tileRulesProp.GetArrayElementAtIndex(ruleIndex);
+            var spriteProp = ruleProp.FindPropertyRelative("ruleSprite");
+
+            EditorGUILayout.BeginHorizontal();
+
+            EditorGUILayout.LabelField($"Rule {ruleIndex + 1}", EditorStyles.boldLabel, GUILayout.ExpandWidth(true));
+
+            if (GUILayout.Button("X", GUILayout.Width(25), GUILayout.Height(20)))
+            {
+                _tileRulesProp.DeleteArrayElementAtIndex(ruleIndex);
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.EndVertical();
+                return;
+            }
+
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.Space(5);
+
+            EditorGUILayout.BeginHorizontal();
+
+            EditorGUILayout.BeginVertical(GUILayout.Width(EditorGUIUtility.currentViewWidth * 0.25f));
+            EditorGUILayout.LabelField("Sprite for this rule:", EditorStyles.miniBoldLabel);
+            DrawSpriteSelector(spriteProp);
+            EditorGUILayout.EndVertical();
+
+            EditorGUILayout.BeginVertical(GUILayout.ExpandWidth(true));
+            DrawRuleGrid(ruleProp);
+            EditorGUILayout.EndVertical();
+
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.EndVertical();
         }
 
         private void AddNewRule()
@@ -109,123 +130,97 @@ namespace WorldPainter.Editor.Editors
 
             var newRuleProp = _tileRulesProp.GetArrayElementAtIndex(newIndex);
 
-            // Инициализируем маску соседей
             var neighborMaskProp = newRuleProp.FindPropertyRelative("neighborMask");
             neighborMaskProp.arraySize = 8;
             for (int i = 0; i < 8; i++)
-            {
                 neighborMaskProp.GetArrayElementAtIndex(i).intValue = 0;
-            }
-        }
-
-        private void DrawRule(int ruleIndex)
-        {
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-
-            // Заголовок с кнопкой удаления
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField($"Rule {ruleIndex + 1}", EditorStyles.boldLabel);
-
-            if (GUILayout.Button("×", GUILayout.Width(25)))
-            {
-                _tileRulesProp.DeleteArrayElementAtIndex(ruleIndex);
-                return;
-            }
-
-            EditorGUILayout.EndHorizontal();
-
-            EditorGUI.indentLevel++;
-
-            // ВЫБОР СПРАЙТА ДЛЯ ПРАВИЛА
-            var ruleProp = _tileRulesProp.GetArrayElementAtIndex(ruleIndex);
-            var spriteProp = ruleProp.FindPropertyRelative("ruleSprite");
-
-            EditorGUILayout.LabelField("Sprite for this rule:", EditorStyles.miniBoldLabel);
-            DrawSpriteSelector(spriteProp);
-
-            // Сетка правил - ИСПОЛЬЗУЕМ BIT MASK как в Unity!
-            DrawRuleGrid(ruleProp);
-
-            EditorGUI.indentLevel--;
-            EditorGUILayout.EndVertical();
         }
 
         private void DrawRuleGrid(SerializedProperty ruleProp)
         {
             var neighborMaskProp = ruleProp.FindPropertyRelative("neighborMask");
 
-            EditorGUILayout.Space(5);
-
-            // ПРАВИЛЬНЫЕ индексы для сетки 3x3 (чтобы стрелки отображались правильно):
-            // ↖ ↑ ↗  = [7] [0] [1]
-            // ← X →  = [6] [-1] [2]
-            // ↙ ↓ ↘  = [5] [4] [3]
             int[] gridIndices = { 7, 0, 1, 6, -1, 2, 5, 4, 3 };
-
-            // Стрелки для каждого направления (индекса 0-7):
-            // 0 = Up, 1 = UpRight, 2 = Right, 3 = DownRight, 
-            // 4 = Down, 5 = DownLeft, 6 = Left, 7 = UpLeft
             string[] arrowSymbols = { "↑", "↗", "→", "↘", "↓", "↙", "←", "↖" };
 
-            // Компактные размеры
-            const int CELL_SIZE = 28;
-            const int SPACING = 1;
+            const float cellSize = 30f;
+            const float spacing = 0.5f;
 
-            // Создаем область для сетки
-            Rect totalRect = EditorGUILayout.GetControlRect(false, CELL_SIZE * 3 + SPACING * 2);
-            totalRect.width = CELL_SIZE * 3 + SPACING * 2;
-            totalRect.x = (EditorGUIUtility.currentViewWidth - totalRect.width) / 2;
+            const float gridWidth = cellSize * 3 + spacing * 2;
+            const float gridHeight = cellSize * 3 + spacing * 2;
 
-            // Рисуем сетку
+            GUILayout.Space(10);
+            Rect totalRect = GUILayoutUtility.GetRect(gridWidth, gridHeight, GUILayout.ExpandWidth(false));
+
+            totalRect.x = EditorGUIUtility.currentViewWidth * 0.25f + ((EditorGUIUtility.currentViewWidth * 0.75f - gridWidth) / 2f);
+
+            EditorGUI.DrawRect(totalRect, new Color(0.2f, 0.2f, 0.2f, 0.3f));
+
             for (int row = 0; row < 3; row++)
-            {
                 for (int col = 0; col < 3; col++)
                 {
                     int cellIndex = row * 3 + col;
                     int neighborIndex = gridIndices[cellIndex];
 
                     Rect cellRect = new Rect(
-                        totalRect.x + col * (CELL_SIZE + SPACING),
-                        totalRect.y + row * (CELL_SIZE + SPACING),
-                        CELL_SIZE,
-                        CELL_SIZE
-                        );
+                        totalRect.x + col * (cellSize + spacing),
+                        totalRect.y + row * (cellSize + spacing),
+                        cellSize,
+                        cellSize);
 
-                    // Центральная ячейка
+                    EditorGUI.DrawRect(cellRect, new Color(0.15f, 0.15f, 0.15f, 0.8f));
+
                     if (neighborIndex == -1)
-                    {
-                        GUI.Box(cellRect, "X");
                         continue;
-                    }
 
-                    // Получаем значение и символ
                     var cellProp = neighborMaskProp.GetArrayElementAtIndex(neighborIndex);
                     int cellValue = cellProp.intValue;
 
-                    // Используем ПРАВИЛЬНЫЙ символ для этого индекса
-                    string symbol = "";
-                    switch (cellValue)
+                    string symbol = cellValue switch
                     {
-                        case 0: // Empty/Don't care
-                            symbol = "";
-                            break;
-                        case 1: // Arrow (should be same tile)
-                            symbol = arrowSymbols[neighborIndex];
-                            break;
-                        case 2: // X (should NOT be same tile)
-                            symbol = "×";
-                            break;
+                        0 => "", // Empty/Don't care
+                        1 => arrowSymbols[neighborIndex], // Arrow (should be same tile)
+                        2 => "×", // X (should NOT be same tile)
+                        _ => ""
+                    };
+
+                    GUIStyle buttonStyle = new GUIStyle(GUI.skin.button)
+                    {
+                        fontSize = 18
+                    };
+
+                    if (cellValue == 1) // Arrow
+                    {
+                        buttonStyle.normal.textColor = Color.green;
+                        buttonStyle.hover.textColor = Color.green;
+                    }
+                    else if (cellValue == 2) // X
+                    {
+                        buttonStyle.normal.textColor = Color.red;
+                        buttonStyle.hover.textColor = Color.red;
+                    }
+                    else // Empty
+                    {
+                        buttonStyle.normal.textColor = Color.gray;
+                        buttonStyle.hover.textColor = Color.white;
                     }
 
-                    // Кнопка
-                    if (GUI.Button(cellRect, symbol))
+                    if (GUI.Button(cellRect, symbol, buttonStyle))
                     {
                         // Меняем значение: 0 → 1 → 2 → 0
                         cellProp.intValue = (cellValue + 1) % 3;
                         serializedObject.ApplyModifiedProperties();
                     }
                 }
-            }
+        }
+
+        private Rect GetSpriteRect()
+        {
+            float spriteFieldSize = Mathf.Min(EditorGUIUtility.currentViewWidth * 0.15f, 100f);
+            Rect spriteRect = GUILayoutUtility.GetRect(spriteFieldSize, spriteFieldSize);
+            spriteRect.width = spriteFieldSize;
+            spriteRect.height = spriteFieldSize;
+            return spriteRect;
         }
     }
 }
